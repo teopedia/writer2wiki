@@ -14,7 +14,7 @@ Currently supported styles:
 See `examples/wiki-sample.odt` for an example of what works.
 
 ## Using as a LibreOffice macro
-1. open folder *<your office install path>/share/Scripts/python*
+1. open folder *(your office install path)/share/Scripts/python*
 2. copy *writer2wiki* folder from this repository there
 3. start Libre Office, open your Writer document
 4. Menu Tools --> Macros --> Organize Macros --> Python (here you can get an error message about damaged JRE - just click on OK and ignore it)
@@ -34,8 +34,8 @@ Hello world: [Scripting LibreOffice with Python](https://onesheep.org/scripting-
 
 Setting up [PyCharm](https://www.jetbrains.com/pycharm/download):
 1. create new project
-2. go to menu: File | Settings... | Project: <your project> | Project interpreter
-3. set `Project interpreter` to `<your Office install path>/program/python` or `...program\python\python.exe` on Windows
+2. go to menu: File | Settings... | Project: (your project) | Project interpreter
+3. set `Project interpreter` to `(your Office install path)/program/python` or `...program\python\python.exe` on Windows
 
 Running from an IDE:
 1. run *main.py* file (`SHIFT` + `F10` with default PyCharm key-mapping) - Office will start if it isn't already
