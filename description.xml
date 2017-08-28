@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<description xmlns="http://openoffice.org/extensions/description/2006"
+ xmlns:dep="http://openoffice.org/extensions/description/2006"
+ xmlns:xlink="http://www.w3.org/1999/xlink" >
+   <identifier value="writer2wiki" />
+
+   <version value="0.1" />
+
+   <dependencies>
+      <TODO />
+   </dependencies>
+
+   <display-name>
+      <name>Writer to Wiki Converter</name>
+   </display-name>
+
+   <registration>
+      <simple-license accept-by="user" suppress-on-update="true" >
+         <license-text xlink:href="LICENSE_1_0.txt" lang="en" />
+      </simple-license>
+   </registration>
+</description>
+
