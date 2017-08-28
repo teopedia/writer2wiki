@@ -1,4 +1,4 @@
-# Convert Libre Office Writer documents to MediaWiki markup
+# Convert Libre Office Writer documents to Wikitext markup
 
 This is still a work in progress, but it's usable.
 
@@ -44,8 +44,9 @@ Running from an IDE:
 
 ### Contributing
 
-*1.* If in doubt just make a pull request! We will handle any details in the comments, or I'll just fix everything myself
-*2.* Naming convention: `ClassName`, `methodName`, `argName`, `localVariable`. Yes, it's against [PEP-8](https://www.python.org/dev/peps/pep-0008/), but it's consistent with UNO
+**1. If in doubt** just make a pull request! We will handle any details in the comments, or I'll just fix everything myself
+
+**2. Naming convention**: `ClassName`, `methodName`, `argName`, `localVariable`. Yes, it's against [PEP-8](https://www.python.org/dev/peps/pep-0008/), but it's consistent with UNO
 
 #### 3. Classes/code organization
 
@@ -63,7 +64,7 @@ Wikitext docs:
 * [WikiMedia markup examples](https://meta.wikimedia.org/wiki/Help:Wikitext_examples)
 * [WikiMedia: HTML in wikitext](https://meta.wikimedia.org/wiki/Help:HTML_in_wikitext) (seems to be better than in Wikipedia)
 * [Wikipedia short markup examples](https://en.wikipedia.org/wiki/Help:Cheatsheet)
-* [Wikipedia elaborate markup examples](https://en.wikipedia.org/wiki/Help:Wiki_markup) (don't know what's the difference with Wikipedia)
+* [Wikipedia elaborate markup examples](https://en.wikipedia.org/wiki/Help:Wiki_markup) (don't know what's the difference with MediaWiki)
 * [Wikipedia: HTML in wikitext](https://en.wikipedia.org/wiki/Help:HTML_in_wikitext)
 
 I was unable to find LibreOffice dev guide as good as OpenOffice's one and the docs are still relevant
@@ -100,8 +101,8 @@ FontSlant = lo_import.enum('awt.FontSlant', 'ITALIC', 'NONE')
 ```
 
 ### Generic import errors
-    * only `from ... import ...` is supported (see uno.py:_uno_import(...))
-    * TODO give an example of erroneous import, right import and wrong usage (reproduce with com.sun.star.connection.NoConnectException)
+* only `from ... import ...` is supported (see uno.py:_uno_import(...))
+* TODO give an example of erroneous import, right import and wrong usage (reproduce with com.sun.star.connection.NoConnectException)
 
 ### `DeploymentException: null process service factory`
 Something is wrong with your Context. For example you've passed local context where global one is expected:
@@ -115,7 +116,6 @@ def open_file(context):
 file = open_file(uno.getComponentContext())
 
 ### this works
-
 local_context = uno.getComponentContext()
 resolver = local_context.ServiceManager.createInstanceWithContext("com.sun.star.bridge.UnoUrlResolver", local_context)
 # assuming office was stated as: `soffice --writer --accept="socket,port=2002;urp;StarOffice.ServiceManager"`
