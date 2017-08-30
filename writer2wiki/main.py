@@ -85,6 +85,7 @@ def convert(context, converter):
 
     if not document.hasLocation():
         ui.messageBox('Save you document - converted file will be saved to the same folder')
+        return
 
     textModel = document.getText()
 
