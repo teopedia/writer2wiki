@@ -13,10 +13,19 @@ class OfficeUi:
         self._context = appContext
         desktop = Service.create(Service.DESKTOP, self._context)
         self._window = desktop.getComponentWindow()
+        self._writeToLog = True  # TODO after we add proper logging, enable dialogs logging only for DEBUG log level
+
+    def _log(self, *messages):
+        if self._writeToLog:
+            print(*messages)
 
     def messageBox(self, message, title='Writer to Wiki Converter',
                    boxType=MbType.MESSAGEBOX, buttons=MbButtons.BUTTONS_OK):
-
         toolkit = Service.create(Service.TOOLKIT, self._context)
         box = toolkit.createMessageBox(self._window, boxType, buttons, title, message)
-        return box.execute()
+
+        self._log('user dialog:', message)
+        dialogResult = box.execute()
+        self._log('user response:', dialogResult)
+
+        return dialogResult
