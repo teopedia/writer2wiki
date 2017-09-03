@@ -18,7 +18,29 @@ See README.md for debugging tips and a full list of supported styles
 """
 
 
-import sys
+try:
+    # if variable exists, we are running as macro from inside Office and need to add parent dir to sys.path
+    # (alternatively we could put all files except `main.py` inside folder named `pythonpath`, see
+    #  https://wiki.openoffice.org/wiki/Python/Transfer_from_Basic_to_Python#Importing_Modules)
+    XSCRIPTCONTEXT
+
+    import sys
+    from inspect import getsourcefile
+    from os.path import dirname, join, abspath, pardir
+
+    # a hack to get this file's location, because `__file__` and `sys.argv` are not defined inside macro
+    thisFilePath = getsourcefile(lambda: 0)
+
+    # relative path to parent dir like `<path to py macros>\writer2wiki-ext\writer2wiki\..`
+    parentDir = join(dirname(thisFilePath), pardir)
+
+    parentDirAbs = abspath(parentDir)
+    if parentDirAbs not in sys.path:
+        sys.path.append(parentDirAbs)
+except NameError:
+    # if XSCRIPTCONTEXT is not defined, we are running from IDE or command line and all paths should be OK
+    pass
+
 
 import uno
 import unohelper
@@ -44,6 +66,7 @@ def saveStringToFile(appContext, filename, content):
     # Example: file contains 'abc' => saveStringToFile(..., 'AB') => now file contains 'ABc'
     if fileAccessService.exists(filename):
         # TODO rename original file and kill it only after save has succeeded
+        # TODO handle exception when we can't delete file (e.g. because of permissions, com.sun.star.uno.Exception)
         fileAccessService.kill(filename)
 
     outputFile = fileAccessService.openFileWrite(filename)
@@ -168,6 +191,7 @@ def convertToWiki():
         # if variable exists, we are running as macro from inside Office
         appContext = XSCRIPTCONTEXT.getComponentContext()   # UNO type: XScriptContext
     except NameError:
+        # when not running as a macro, try to connect to Office through socket
         appContext = getOfficeAppContext()
 
     convert(appContext, WikiConverter())
