@@ -21,6 +21,7 @@ class WikiConverter:
         return 'txt'
 
     def addParagraph(self, text):
+        # TODO handle ParagraphAdjust {LEFT, RIGHT, ...}
         print('>> para add:', text)
         if not text:
             return
