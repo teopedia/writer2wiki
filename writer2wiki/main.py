@@ -17,6 +17,7 @@
 See README.md for debugging tips and a full list of supported styles
 """
 
+import sys
 
 try:
     # if variable exists, we are running as macro from inside Office and need to add parent dir to sys.path
@@ -24,7 +25,6 @@ try:
     #  https://wiki.openoffice.org/wiki/Python/Transfer_from_Basic_to_Python#Importing_Modules)
     XSCRIPTCONTEXT
 
-    import sys
     from inspect import getsourcefile
     from os.path import dirname, join, abspath, pardir
 
@@ -51,6 +51,7 @@ from writer2wiki.WikiConverter import WikiConverter
 from writer2wiki.w2w_office.lo_enums import \
     CaseMap, FontSlant, TextPortionType, FontStrikeout, FontWeight, FontUnderline
 from writer2wiki.w2w_office.service import Service
+import writer2wiki.debug_utils as dbg
 
 
 def getTargetFilename(docLocation, targetExtension):
@@ -131,7 +132,7 @@ def convert(context, converter):
                 print('skip non-text portion: ' + portionType)
                 continue
 
-            text = portion.getString()  # type: str
+            text = converter.replaceNonBreakingChars(portion.getString())  # type: str
             if not text:  # blank line
                 continue
 
@@ -140,10 +141,6 @@ def convert(context, converter):
             link = portion.HyperLinkURL
             if link:  # link should go first for proper wiki markup
                 portionDecorator.addHyperLink(link)
-
-            print('>', '`%s`' % text, ':: ', hex(portion.CharColor), portion.CharWeight, portion.CharPosture)
-            print('---     :', portion.CharUnderline, portion.CharUnderlineHasColor, portion.CharUnderlineColor)
-            print('---     :', portion.CharStrikeout, portion.CharCaseMap, portion.CharEscapement)
 
             if not text.isspace():
                 if portion.CharPosture != FontSlant.NONE:                   # italic
@@ -200,5 +197,5 @@ def convertToWiki():
 if __name__ == '__main__':
     convertToWiki()
 
-
+# comma (,) at the end is significant, don't remove
 g_exportedScripts = convertToWiki,

@@ -20,6 +20,23 @@ class WikiConverter:
     def getFileExtension(cls):
         return 'txt'
 
+    @classmethod
+    def replaceNonBreakingChars(cls, text):
+        """
+        Replace non-breaking space and dash with html entities for better readability of wiki-pages sources and safe
+        copy-pasting to editors without proper Unicode support
+
+        :param str text:
+        :return: modified text
+        """
+
+        # full list of non-breaking (glue) chars: http://unicode.org/reports/tr14/#GL
+
+        return text.translate({
+            0x00A0: '&nbsp;',   # non-breaking space
+            0x2011: '&#x2011;'  # non-breaking dash
+        })
+
     def addParagraph(self, text):
         # TODO handle ParagraphAdjust {LEFT, RIGHT, ...}
         print('>> para add:', text)
