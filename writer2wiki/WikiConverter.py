@@ -5,6 +5,7 @@
 
 
 from writer2wiki.WikiTextPortionDecorator import WikiTextPortionDecorator
+from writer2wiki.WikiParagraphDecorator import WikiParagraphDecorator
 
 
 class WikiConverter:
@@ -15,6 +16,14 @@ class WikiConverter:
     @classmethod
     def makeTextPortionDecorator(cls, text):
         return WikiTextPortionDecorator(text)
+
+    @classmethod
+    def makeParagraphDecorator(cls, paragraphUNO):
+        """
+        :param paragraphUNO:
+        :return WikiParagraphDecorator:
+        """
+        return WikiParagraphDecorator(paragraphUNO)
 
     @classmethod
     def getFileExtension(cls):
@@ -37,12 +46,19 @@ class WikiConverter:
             0x2011: '&#x2011;'  # non-breaking dash
         })
 
-    def addParagraph(self, text):
+    def addParagraph(self, paragraphDecorator):
+        """
+        :param WikiParagraphDecorator paragraphDecorator:
+        :return void:
+        """
+
         # TODO handle ParagraphAdjust {LEFT, RIGHT, ...}
-        print('>> para add:', text)
-        if not text:
+        if paragraphDecorator.isEmpty():
+            print('>> skip empty paragraph')
             return
-        self._result += text + '\r\n\r\n'
+
+        print('>> para add:', paragraphDecorator)
+        self._result += paragraphDecorator.getResult() + '\r\n\r\n'
 
     def getResult(self):
         return self._result

@@ -15,9 +15,12 @@ class WikiTextPortionDecorator:
         self._cssStyles = {}
         self._result = text
 
+    def __str__(self):
+        return self.getResult()
+
     def _addCssStyle(self, name, value):
         if name in self._cssStyles:
-            print('WARN: change `%s` value from %s to %s' % (name, self._cssStyles[name], value))
+            print('WARN: change `{}` value from {} to {}'.format(name, self._cssStyles[name], value))
         self._cssStyles[name] = value
 
     def _surroundWithTag(self, tag, tagAttributes=''):
@@ -49,7 +52,7 @@ class WikiTextPortionDecorator:
 
     def _addTextDecorationStyle(self, decorationType, officeStyleKind, styleMap):
         if officeStyleKind not in styleMap:
-            print('ignore unexpected %s kind: %s' % (decorationType, officeStyleKind))
+            print('ignore unexpected {} kind: {}'.format(decorationType, officeStyleKind))
             return
 
         self._addCssStyle('text-decoration', decorationType)
@@ -122,5 +125,6 @@ class WikiTextPortionDecorator:
         return self._result
 
 
+# TODO move to separate file
 def intToHtmlHex(val):
     return '#%X' % val

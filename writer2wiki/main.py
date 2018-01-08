@@ -120,8 +120,8 @@ def convert(context, converter):
         if Service.objectSupports(paragraph, Service.TEXT_TABLE):
             print('skip text table')
             continue
-        print('para iter')
-        paragraphResult = ''
+        dbg.printCentered('para iter')
+        paragraphDecorator = converter.makeParagraphDecorator(paragraph)
 
         textPortionsEnum = paragraph.createEnumeration()
         while textPortionsEnum.hasMoreElements():
@@ -171,12 +171,12 @@ def convert(context, converter):
                 underlineColor = portion.CharUnderlineColor if portion.CharUnderlineHasColor else None
                 portionDecorator.addUnderLine(portion.CharUnderline, underlineColor)
 
-            paragraphResult += portionDecorator.getResult()
+            paragraphDecorator.addPortion(portionDecorator)
 
-        converter.addParagraph(paragraphResult)
+        converter.addParagraph(paragraphDecorator)
 
-    print('---')
-    print('--- result: ' + converter.getResult())
+    dbg.printCentered('done')
+    print('result: ' + converter.getResult())
 
     targetFilename = getTargetFilename(document.getLocation(), converter.getFileExtension())
     saveStringToFile(context, targetFilename, converter.getResult())
