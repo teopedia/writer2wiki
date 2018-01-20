@@ -18,16 +18,17 @@ class WikiConverter:
         return WikiTextPortionDecorator(text)
 
     @classmethod
-    def makeParagraphDecorator(cls, paragraphUNO):
+    def makeParagraphDecorator(cls, paragraphUNO, userStylesMap):
         """
         :param paragraphUNO:
+        :param userStylesMap:
         :return WikiParagraphDecorator:
         """
-        return WikiParagraphDecorator(paragraphUNO)
+        return WikiParagraphDecorator(paragraphUNO, userStylesMap)
 
     @classmethod
     def getFileExtension(cls):
-        return 'txt'
+        return '.wiki.txt'
 
     @classmethod
     def replaceNonBreakingChars(cls, text):
@@ -58,7 +59,7 @@ class WikiConverter:
             return
 
         print('>> para add:', paragraphDecorator)
-        self._result += paragraphDecorator.getResult() + '\r\n\r\n'
+        self._result += paragraphDecorator.getResult() + '\n\n'
 
     def getResult(self):
         return self._result

@@ -26,6 +26,12 @@ class TextPortionType:
     SOFT_PAGE_BREAK     = 'SoftPageBreak'
     IN_CONTENT_METADATA = 'InContentMetadata'
 
+
+# If we will ever come up with automatic generation of Python bindings for LibreOffice, these could be retrieved with
+# `uno.getConstantByName('com.sun.star.awt.FontWeight.BOLD')` etc.
+# But until that's the case and since the values will never change due to backwards compatibility, we will just
+# hardcode them for clarity (no need to lookup in the documentation) and faster script startup time
+
 class FontWeight:
     DONTKNOW   = 0.0
     THIN       = 50.0

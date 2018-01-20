@@ -6,6 +6,7 @@
 
 from writer2wiki.css_enums import CssTextDecorationStyle
 from writer2wiki.w2w_office.lo_enums import *
+from writer2wiki.util import *
 
 
 class WikiTextPortionDecorator:
@@ -117,14 +118,14 @@ class WikiTextPortionDecorator:
     def getResult(self):
         if len(self._cssStyles):
             style = ''
+
+            # TODO PY: replace with `str.join()`
             for name, value in sorted(self._cssStyles.items()):
                 style += name + ':' + value + ';'
             style = style[:-1]  # remove last semicolon
             self._surroundWithTag('span', 'style="%s"' % style)
 
+            # FIXME workaround for <span> styles inside wiki templates (we get them from paragraph's styles)
+            self._result = '{{#tag:span|' + self._result + '}}'
+
         return self._result
-
-
-# TODO move to separate file
-def intToHtmlHex(val):
-    return '#%X' % val

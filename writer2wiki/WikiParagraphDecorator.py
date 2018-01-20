@@ -5,13 +5,17 @@
 
 
 from writer2wiki.WikiTextPortionDecorator import WikiTextPortionDecorator
+from writer2wiki.UserStylesMapper import UserStylesMapper
 
 class WikiParagraphDecorator:
 
-    _missingCustomStyles = {}
-
-    def __init__(self, paragraphUNO):
+    def __init__(self, paragraphUNO, userStylesMapper):
+        """
+        :param paragraphUNO:
+        :param UserStylesMapper userStylesMapper:
+        """
         self._paragraphUNO = paragraphUNO
+        self._userStylesMapper = userStylesMapper
         self._result = ''
 
     def __str__(self):
@@ -25,7 +29,11 @@ class WikiParagraphDecorator:
         self._result += portion.getResult()
 
     def getResult(self):
-        return self._result
+        wikiStyle = self._userStylesMapper.getParagraphMappedStyle(self._paragraphUNO)
+        if wikiStyle is None or not self._result:
+            return self._result
+
+        return '{{' + wikiStyle + '|' + self._result + '}}'
 
     def isEmpty(self):
         return len(self.getResult()) == 0

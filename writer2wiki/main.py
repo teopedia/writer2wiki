@@ -43,40 +43,20 @@ except NameError:
 
 
 import uno
-import unohelper
 from com.sun.star.connection import NoConnectException
+
+from pathlib import Path
 
 from writer2wiki.OfficeUi import OfficeUi
 from writer2wiki.WikiConverter import WikiConverter
 from writer2wiki.w2w_office.lo_enums import \
     CaseMap, FontSlant, TextPortionType, FontStrikeout, FontWeight, FontUnderline
 from writer2wiki.w2w_office.service import Service
+from writer2wiki.UserStylesMapper import UserStylesMapper
+from writer2wiki.util import *
+from writer2wiki import ui_text
 import writer2wiki.debug_utils as dbg
 
-
-def getTargetFilename(docLocation, targetExtension):
-    import os
-    fileWithoutExt, ext = os.path.splitext(docLocation)
-    return fileWithoutExt + '.' + targetExtension
-
-def saveStringToFile(appContext, filename, content):
-    fileAccessService = Service.create(Service.SIMPLE_FILE_ACCESS, appContext)
-
-    # in case file already exists and contains longer string then we are writing here, the remaining of original string
-    # will be left in file
-    # Example: file contains 'abc' => saveStringToFile(..., 'AB') => now file contains 'ABc'
-    if fileAccessService.exists(filename):
-        # TODO rename original file and kill it only after save has succeeded
-        # TODO handle exception when we can't delete file (e.g. because of permissions, com.sun.star.uno.Exception)
-        fileAccessService.kill(filename)
-
-    outputFile = fileAccessService.openFileWrite(filename)
-    outputStream = Service.create(Service.TEXT_OUTPUT_STREAM)
-    outputStream.setEncoding('UTF-8')
-
-    outputStream.setOutputStream(outputFile)
-    outputStream.writeString(content)
-    outputStream.closeOutput()
 
 def getOfficeAppContext(haveTriedToStartOffice=False):
     resolver = Service.create(Service.UNO_URL_RESOLVER)
@@ -87,11 +67,12 @@ def getOfficeAppContext(haveTriedToStartOffice=False):
             # we've already tried to start office, some other problem occurred
             raise
 
+        print("It seems no Libre Office instance is running, let's try to start one")
+
         import os
         portNumber = 2002
         os.system('soffice --writer --accept="socket,port=%d;urp;StarOffice.ServiceManager"' % portNumber)
 
-        print("It seems no Libre Office instance is running, let's try to start one")
         context = getOfficeAppContext(True)
 
     return context
@@ -104,13 +85,15 @@ def convert(context, converter):
 
     if not Service.objectSupports(document, Service.TEXT_DOCUMENT):
         # TODO more specific message: either no document is opened at all or we can't convert, for example, Calc
-        ui.messageBox('Please, open LibreOffice Writer document to convert')
+        ui.messageBox(ui_text.noWriterDocumentOpened())
         return
 
     if not document.hasLocation():
-        ui.messageBox('Save you document - converted file will be saved to the same folder')
+        ui.messageBox(ui_text.docHasNoFile())
         return
 
+    docPath = Path(uno.fileUrlToSystemPath(document.getLocation()))
+    userStylesMapper = UserStylesMapper(docPath.parent / 'wiki-styles.txt')
     textModel = document.getText()
 
     # TODO write generator to iterate UNO enumerations
@@ -121,7 +104,7 @@ def convert(context, converter):
             print('skip text table')
             continue
         dbg.printCentered('para iter')
-        paragraphDecorator = converter.makeParagraphDecorator(paragraph)
+        paragraphDecorator = converter.makeParagraphDecorator(paragraph, userStylesMapper)
 
         textPortionsEnum = paragraph.createEnumeration()
         while textPortionsEnum.hasMoreElements():
@@ -157,7 +140,6 @@ def convert(context, converter):
                     # FIX CONVERT: handle custom-colored links (possible in Office)
                     portionDecorator.addFontColor(portion.CharColor)
 
-                # TODO check if sub/sup is compatible with styles above (it works in Office, but how is it displayed in wiki?)
                 if portion.CharEscapement < 0:
                     portionDecorator.addSubScript()
                 if portion.CharEscapement > 0:
@@ -176,12 +158,16 @@ def convert(context, converter):
         converter.addParagraph(paragraphDecorator)
 
     dbg.printCentered('done')
-    print('result: ' + converter.getResult())
+    print('result:\n' + converter.getResult())
 
-    targetFilename = getTargetFilename(document.getLocation(), converter.getFileExtension())
-    saveStringToFile(context, targetFilename, converter.getResult())
+    targetFile = docPath.with_suffix(converter.getFileExtension())
+    with openW2wFile(targetFile, 'w') as f:
+        f.write(converter.getResult())
 
-    ui.messageBox('Saved converted file to ' + uno.fileUrlToSystemPath(targetFilename))
+    if not userStylesMapper.saveStyles():
+        ui.messageBox(ui_text.failedToSaveMappingsFile(userStylesMapper.getFilePath()))
+
+    ui.messageBox(ui_text.conversionDone(targetFile, userStylesMapper))
 
 def convertToWiki():
     try:
