@@ -4,11 +4,12 @@
 #           http://www.boost.org/LICENSE_1_0.txt)
 
 
+from writer2wiki.BaseConverter import BaseConverter
 from writer2wiki.WikiTextPortionDecorator import WikiTextPortionDecorator
 from writer2wiki.WikiParagraphDecorator import WikiParagraphDecorator
 
 
-class WikiConverter:
+class WikiConverter(BaseConverter):
 
     def __init__(self):
         self._result = ''

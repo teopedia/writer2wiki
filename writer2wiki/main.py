@@ -42,20 +42,10 @@ except NameError:
     pass
 
 
-import uno
 from com.sun.star.connection import NoConnectException
 
-from pathlib import Path
-
-from writer2wiki.OfficeUi import OfficeUi
 from writer2wiki.WikiConverter import WikiConverter
-from writer2wiki.w2w_office.lo_enums import \
-    CaseMap, FontSlant, TextPortionType, FontStrikeout, FontWeight, FontUnderline
 from writer2wiki.w2w_office.service import Service
-from writer2wiki.UserStylesMapper import UserStylesMapper
-from writer2wiki.util import *
-from writer2wiki import ui_text
-import writer2wiki.debug_utils as dbg
 
 
 def getOfficeAppContext(haveTriedToStartOffice=False):
@@ -77,98 +67,6 @@ def getOfficeAppContext(haveTriedToStartOffice=False):
 
     return context
 
-
-def convert(context, converter):
-    ui = OfficeUi(context)
-    desktop = Service.create(Service.DESKTOP, context)
-    document = desktop.getCurrentComponent()
-
-    if not Service.objectSupports(document, Service.TEXT_DOCUMENT):
-        # TODO more specific message: either no document is opened at all or we can't convert, for example, Calc
-        ui.messageBox(ui_text.noWriterDocumentOpened())
-        return
-
-    if not document.hasLocation():
-        ui.messageBox(ui_text.docHasNoFile())
-        return
-
-    docPath = Path(uno.fileUrlToSystemPath(document.getLocation()))
-    userStylesMapper = UserStylesMapper(docPath.parent / 'wiki-styles.txt')
-    textModel = document.getText()
-
-    # TODO write generator to iterate UNO enumerations
-    textIterator = textModel.createEnumeration()
-    while textIterator.hasMoreElements():
-        paragraph = textIterator.nextElement()
-        if Service.objectSupports(paragraph, Service.TEXT_TABLE):
-            print('skip text table')
-            continue
-        dbg.printCentered('para iter')
-        paragraphDecorator = converter.makeParagraphDecorator(paragraph, userStylesMapper)
-
-        textPortionsEnum = paragraph.createEnumeration()
-        while textPortionsEnum.hasMoreElements():
-            portion = textPortionsEnum.nextElement()
-
-            portionType = portion.TextPortionType
-            if portionType != TextPortionType.TEXT:
-                print('skip non-text portion: ' + portionType)
-                continue
-
-            text = converter.replaceNonBreakingChars(portion.getString())  # type: str
-            if not text:  # blank line
-                continue
-
-            portionDecorator = converter.makeTextPortionDecorator(text)
-
-            link = portion.HyperLinkURL
-            if link:  # link should go first for proper wiki markup
-                portionDecorator.addHyperLink(link)
-
-            if not text.isspace():
-                if portion.CharPosture != FontSlant.NONE:                   # italic
-                    portionDecorator.addPosture(portion.CharPosture)
-
-                if portion.CharWeight != FontWeight.NORMAL and not link:    # bold
-                    # FIX CONVERT: handle non-bold links (possible in Office)
-                    portionDecorator.addWeight(portion.CharWeight)
-
-                if portion.CharCaseMap != CaseMap.NONE:
-                    portionDecorator.addCaseMap(portion.CharCaseMap)
-
-                if portion.CharColor != -1 and not link:
-                    # FIX CONVERT: handle custom-colored links (possible in Office)
-                    portionDecorator.addFontColor(portion.CharColor)
-
-                if portion.CharEscapement < 0:
-                    portionDecorator.addSubScript()
-                if portion.CharEscapement > 0:
-                    portionDecorator.addSuperScript()
-
-            if portion.CharStrikeout != FontStrikeout.NONE:
-                portionDecorator.addStrikeout(portion.CharStrikeout)
-
-            if portion.CharUnderline not in [FontUnderline.NONE, FontUnderline.DONTKNOW] and not link:
-                # FIX CONVERT: handle links without underlines (possible in Office)
-                underlineColor = portion.CharUnderlineColor if portion.CharUnderlineHasColor else None
-                portionDecorator.addUnderLine(portion.CharUnderline, underlineColor)
-
-            paragraphDecorator.addPortion(portionDecorator)
-
-        converter.addParagraph(paragraphDecorator)
-
-    dbg.printCentered('done')
-    print('result:\n' + converter.getResult())
-
-    targetFile = docPath.with_suffix(converter.getFileExtension())
-    with openW2wFile(targetFile, 'w') as f:
-        f.write(converter.getResult())
-
-    if not userStylesMapper.saveStyles():
-        ui.messageBox(ui_text.failedToSaveMappingsFile(userStylesMapper.getFilePath()))
-
-    ui.messageBox(ui_text.conversionDone(targetFile, userStylesMapper))
-
 def convertToWiki():
     try:
         # if variable exists, we are running as macro from inside Office
@@ -177,7 +75,8 @@ def convertToWiki():
         # when not running as a macro, try to connect to Office through socket
         appContext = getOfficeAppContext()
 
-    convert(appContext, WikiConverter())
+    c = WikiConverter()
+    c.convert(appContext)
 
 
 if __name__ == '__main__':
