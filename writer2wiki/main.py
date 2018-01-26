@@ -41,14 +41,17 @@ except NameError:
     # if XSCRIPTCONTEXT is not defined, we are running from IDE or command line and all paths should be OK
     pass
 
-
-from com.sun.star.connection import NoConnectException
-
 from writer2wiki.WikiConverter import WikiConverter
 from writer2wiki.w2w_office.service import Service
 
 
 def getOfficeAppContext(haveTriedToStartOffice=False):
+    # need this for `from com.star... import ...` to work - it's re-defined with `uno._uno_import()`
+    # noinspection PyUnresolvedReferences
+    import uno
+
+    from com.sun.star.connection import NoConnectException
+
     resolver = Service.create(Service.UNO_URL_RESOLVER)
     try:
         context = resolver.resolve("uno:socket,host=localhost,port=2002;urp;StarOffice.ComponentContext")
