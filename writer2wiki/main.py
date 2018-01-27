@@ -50,6 +50,7 @@ def getOfficeAppContext(haveTriedToStartOffice=False):
     # noinspection PyUnresolvedReferences
     import uno
 
+    # noinspection PyUnresolvedReferences
     from com.sun.star.connection import NoConnectException
 
     resolver = Service.create(Service.UNO_URL_RESOLVER)

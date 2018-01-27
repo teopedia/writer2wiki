@@ -73,20 +73,15 @@ class BaseConverter(metaclass=ABCMeta):
         userStylesMapper = UserStylesMapper(docPath.parent / 'wiki-styles.txt')
         textModel = document.getText()
 
-        # TODO write generator to iterate UNO enumerations
-        textIterator = textModel.createEnumeration()
-        while textIterator.hasMoreElements():
-            paragraph = textIterator.nextElement()
+        from writer2wiki.util import iterUnoCollection
+        for paragraph in iterUnoCollection(textModel):
             if Service.objectSupports(paragraph, Service.TEXT_TABLE):
                 print('skip text table')
                 continue
             dbg.printCentered('para iter')
             paragraphDecorator = self.makeParagraphDecorator(paragraph, userStylesMapper)
 
-            textPortionsEnum = paragraph.createEnumeration()
-            while textPortionsEnum.hasMoreElements():
-                portion = textPortionsEnum.nextElement()
-
+            for portion in iterUnoCollection(paragraph):
                 portionType = portion.TextPortionType
                 if portionType != TextPortionType.TEXT:
                     print('skip non-text portion: ' + portionType)
