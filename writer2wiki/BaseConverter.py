@@ -6,7 +6,6 @@
 
 import uno
 from abc import ABCMeta, abstractclassmethod, abstractmethod
-from pathlib import Path
 
 from writer2wiki.OfficeUi import OfficeUi
 from writer2wiki.w2w_office.lo_enums import \
@@ -52,7 +51,7 @@ class BaseConverter(metaclass=ABCMeta):
 
     @abstractmethod
     def getResult(self):
-        # type: (None) -> str
+        # type: () -> str
         pass
 
     def convert(self, context):

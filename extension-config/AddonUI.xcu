@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<reg:component-data
+        xmlns:reg="http://openoffice.org/2001/registry" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        reg:name="Addons"
+        reg:package="org.openoffice.Office">
+    <node reg:name="AddonUI">
+        <node reg:name="AddonMenu">
+
+            <node reg:name="com.github.teopedia.writer2wiki.menuitem1" reg:op="fuse">
+
+                <prop reg:name="Title" reg:type="xs:string">
+                    <value>Export to Wiki-text</value>
+                    <value xml:lang="ru">Экспортировать в Wiki-текст</value>
+                </prop>
+
+                <prop reg:name="URL" reg:type="xs:string">
+                    <value>service:com.github.teopedia.writer2wiki</value>
+                </prop>
+
+                <prop reg:name="Target" reg:type="xs:string">
+                    <value>_self</value>
+                </prop>
+
+                <prop reg:name="Context" reg:type="xs:string">
+                    <value>com.sun.star.text.TextDocument</value>
+                </prop>
+
+                <prop reg:name="ImageIdentifier" reg:type="xs:string">
+                    <value/>
+                </prop>
+
+            </node>
+
+        </node>
+    </node>
+</reg:component-data>

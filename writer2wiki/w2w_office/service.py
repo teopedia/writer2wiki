@@ -34,8 +34,7 @@ class Service:
     def create(serviceName, context=None):
         if context is None:
             context = uno.getComponentContext()
-        manager = context.ServiceManager
-        return manager.createInstanceWithContext(serviceName, context)
+        return context.ServiceManager.createInstanceWithContext(serviceName, context)
 
     @staticmethod
     def objectSupports(obj, serviceName):

@@ -5,7 +5,7 @@
 
 
 from writer2wiki.WikiTextPortionDecorator import WikiTextPortionDecorator
-from writer2wiki.UserStylesMapper import UserStylesMapper
+
 
 class WikiParagraphDecorator:
 

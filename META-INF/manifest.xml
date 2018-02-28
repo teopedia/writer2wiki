@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mnf:manifest xmlns:mnf="http://openoffice.org/2001/manifest">
+
+<mnf:file-entry mnf:full-path="writer2wiki/main.py"           mnf:media-type="application/vnd.sun.star.uno-component;type=Python"/>
+<mnf:file-entry mnf:full-path="extension-config/AddonUI.xcu" mnf:media-type="application/vnd.sun.star.configuration-data"/>
+
+</mnf:manifest>
+

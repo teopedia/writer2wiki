@@ -4,7 +4,6 @@
 #           http://www.boost.org/LICENSE_1_0.txt)
 
 from collections import Counter
-from pathlib import Path
 
 from writer2wiki.util import *
 
