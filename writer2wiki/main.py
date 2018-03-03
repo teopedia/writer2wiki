@@ -24,9 +24,10 @@ from com.sun.star.task import XJobExecutor
 import logging as log
 import os.path
 
+# TODO Py3.5: use pathlib.Path.home()
 # '~' will be expanded to: 'C:\Users\my-user-name\' on Windows, '/home/my-user-name/' on Linux
-LOG_FILE_NAME = os.path.normpath(os.path.expanduser('~/writer2wiki.log'))
-# LOG_FILE_NAME = 'C:/Alexander/Programming/Python/w2w.log'
+LOG_FILE_NAME = os.path.normpath(os.path.expanduser('~/.writer2wiki.log'))
+
 log.basicConfig(
     filename=LOG_FILE_NAME,
     format='%(asctime)s [%(levelname)s] %(message)s',
@@ -47,6 +48,8 @@ def fixPythonImportPath():
     We need this because by default Macros and UNO components can only import files located in `pythonpath` folder,
     which must be in extension's root folder. This requires extra configuration in IDE and project structure becomes
     somewhat ugly
+
+    TODO Py3.5: use pathlib
     """
 
     logFixPath('entered fix path')
@@ -147,7 +150,7 @@ g_ImplementationHelper.addImplementation(
 
 # For use from IDE or command line.
 # Use Python interpreter from LibreOffice's distribution.
-# On Windows it's in <Program Files>\LibreOffice 5\program\python.exe
+# On Windows it's <Program Files>\LibreOffice 5\program\python.exe
 if __name__ == '__main__':
     convertToWiki()
 

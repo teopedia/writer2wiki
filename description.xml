@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<description xmlns="http://openoffice.org/extensions/description/2006"
-             xmlns:descr="http://openoffice.org/extensions/description/2006"
-             xmlns:xlink="http://www.w3.org/1999/xlink">
+<description xmlns       = "http://openoffice.org/extensions/description/2006"
+             xmlns:descr = "http://openoffice.org/extensions/description/2006"
+             xmlns:libre = "http://libreoffice.org/extensions/description/2011"
+             xmlns:xlink = "http://www.w3.org/1999/xlink">
 
     <identifier value="com.github.teopedia.writer2wiki" />
     <version value="0.10"/>
 
     <dependencies>
-        <!-- TODO: replace minimal version with LibreOffice 5.4(because of Python 3.5)-->
-        <OpenOffice.org-minimal-version value="4.1" descr:name="OpenOffice.org 4.1"/>
+        <libre:LibreOffice-minimal-version value="5.4" descr:name="LibreOffice 5.4"/>
     </dependencies>
 
     <registration>
@@ -18,9 +18,17 @@
     </registration>
 
     <display-name>
-        <name lang="en">Writer to Wiki Converter</name>
-        <name lang="ru">Конвертер из Writer в Wiki</name>
+        <name>Writer2Wiki</name>
     </display-name>
+
+    <extension-description>
+        <src lang="en" xlink:href="extension-config/ext-manager-description/descr.en.txt"/>
+        <src lang="ru" xlink:href="extension-config/ext-manager-description/descr.ru.txt"/>
+    </extension-description>
+
+    <update-information>
+        <src xlink:href="https://raw.githubusercontent.com/teopedia/writer2wiki/master/non-oxt-files/auto-update.xml"/>
+    </update-information>
 
 </description>
 

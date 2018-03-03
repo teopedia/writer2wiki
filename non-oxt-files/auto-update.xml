@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<description xmlns       = "http://openoffice.org/extensions/description/2006"
+             xmlns:descr = "http://openoffice.org/extensions/description/2006"
+             xmlns:libre = "http://libreoffice.org/extensions/description/2011"
+             xmlns:xlink = "http://www.w3.org/1999/xlink">
+
+    <identifier value="com.github.teopedia.writer2wiki"/>
+    <version value="0.11"/>
+
+    <dependencies>
+        <libre:LibreOffice-minimal-version descr:name="LibreOffice 5.4" value="5.4"/>
+    </dependencies>
+
+    <update-download>
+        <src xlink:href="https://github.com/teopedia/writer2wiki/releases/download/v0.11/writer2wiki.oxt"/>
+    </update-download>
+
+</description>
