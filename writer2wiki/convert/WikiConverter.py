@@ -4,9 +4,9 @@
 #           http://www.boost.org/LICENSE_1_0.txt)
 
 
-from writer2wiki.BaseConverter import BaseConverter
-from writer2wiki.WikiTextPortionDecorator import WikiTextPortionDecorator
-from writer2wiki.WikiParagraphDecorator import WikiParagraphDecorator
+from writer2wiki.convert.BaseConverter import BaseConverter
+from writer2wiki.convert.WikiTextPortionDecorator import WikiTextPortionDecorator
+from writer2wiki.convert.WikiParagraphDecorator import WikiParagraphDecorator
 
 
 class WikiConverter(BaseConverter):

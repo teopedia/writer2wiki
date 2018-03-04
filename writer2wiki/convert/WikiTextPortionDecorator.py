@@ -4,7 +4,7 @@
 #           http://www.boost.org/LICENSE_1_0.txt)
 
 
-from writer2wiki.css_enums import CssTextDecorationStyle
+from writer2wiki.convert.css_enums import CssTextDecorationStyle
 from writer2wiki.w2w_office.lo_enums import *
 from writer2wiki.util import *
 

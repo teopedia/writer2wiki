@@ -109,7 +109,7 @@ def getOfficeAppContext(haveTriedToStartOffice=False):
 def convertToWiki(appContext=None):
     log.info(' Conversion started '.center(80, '-'))
     try:
-        from writer2wiki.WikiConverter import WikiConverter
+        from writer2wiki.convert.WikiConverter import WikiConverter
 
         if appContext is None:  # this must be the case only when we run as a macro or from command line / IDE
             try:

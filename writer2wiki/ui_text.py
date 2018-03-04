@@ -5,7 +5,7 @@
 
 # TODO add localization
 
-from writer2wiki.UserStylesMapper import UserStylesMapper
+from writer2wiki.convert.UserStylesMapper import UserStylesMapper
 
 
 def noWriterDocumentOpened():

@@ -11,7 +11,7 @@ from writer2wiki.OfficeUi import OfficeUi
 from writer2wiki.w2w_office.lo_enums import \
     CaseMap, FontSlant, TextPortionType, FontStrikeout, FontWeight, FontUnderline
 from writer2wiki.w2w_office.service import Service
-from writer2wiki.UserStylesMapper import UserStylesMapper
+from writer2wiki.convert.UserStylesMapper import UserStylesMapper
 from writer2wiki.util import *
 from writer2wiki import ui_text
 import writer2wiki.debug_utils as dbg

@@ -4,7 +4,7 @@
 #           http://www.boost.org/LICENSE_1_0.txt)
 
 
-from writer2wiki.WikiTextPortionDecorator import WikiTextPortionDecorator
+from writer2wiki.convert.WikiTextPortionDecorator import WikiTextPortionDecorator
 
 
 class WikiParagraphDecorator:
