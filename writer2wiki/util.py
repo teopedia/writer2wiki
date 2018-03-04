@@ -15,7 +15,7 @@ def openW2wFile(path, mode):
     return open(path, mode, encoding='utf-8', newline='\r\n')
 
 def intToHtmlHex(val):
-    return '#%X' % val
+    return '#{:0>6X}'.format(val)
 
 def iterUnoCollection(unoCollection):
     enum = unoCollection.createEnumeration()
