@@ -44,7 +44,13 @@ class UserStylesMapper:
             return
 
         docName, wikiName = parts
+        if wikiName == '':
+            wikiName = None
+
         print('---qqq adding {} = {}'.format(docName, wikiName))
+
+        if docName in self._styleMap:
+            self._addParseError('style `{}` is already in the style-map, will overwrite it'.format(docName), line)
 
         self._styleMap[docName] = wikiName
 
