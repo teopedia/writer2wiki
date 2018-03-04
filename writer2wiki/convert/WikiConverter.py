@@ -4,6 +4,8 @@
 #           http://www.boost.org/LICENSE_1_0.txt)
 
 
+from typing import List
+
 from writer2wiki.convert.BaseConverter import BaseConverter
 from writer2wiki.convert.WikiTextPortionDecorator import WikiTextPortionDecorator
 from writer2wiki.convert.WikiParagraphDecorator import WikiParagraphDecorator
@@ -12,7 +14,7 @@ from writer2wiki.convert.WikiParagraphDecorator import WikiParagraphDecorator
 class WikiConverter(BaseConverter):
 
     def __init__(self):
-        self._result = ''
+        self._paragraphs = []  # type: List[WikiParagraphDecorator]
 
     @classmethod
     def makeTextPortionDecorator(cls, text):
@@ -59,8 +61,31 @@ class WikiConverter(BaseConverter):
             print('>> skip empty paragraph')
             return
 
+        self._paragraphs.append(paragraphDecorator)
+
         print('>> para add:', paragraphDecorator)
-        self._result += paragraphDecorator.getResult() + '\n\n'
 
     def getResult(self):
-        return self._result
+        if len(self._paragraphs) == 0:
+            return ''
+
+        result = ''
+        currentStyle = self._paragraphs[0].getStyle()
+        sameStyleBuffer = ''
+
+        def flushBuffer():
+            nonlocal sameStyleBuffer, result
+            sameStyleBuffer = sameStyleBuffer[: -2]  # remove last para separator before wrapping in style
+            result += WikiParagraphDecorator.getStyledContent(currentStyle, sameStyleBuffer) + '\n\n'
+
+        for p in self._paragraphs:
+            if p.getStyle() == currentStyle:
+                sameStyleBuffer += p.getContent() + '\n\n'
+                continue
+            flushBuffer()
+            sameStyleBuffer = p.getContent() + '\n\n'
+            currentStyle = p.getStyle()
+
+        flushBuffer()
+
+        return result
