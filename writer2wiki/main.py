@@ -21,6 +21,7 @@ See README.md for debugging tips and a full list of supported styles
 import unohelper
 from com.sun.star.task import XJobExecutor
 
+import util
 import logging as log
 import os.path
 
@@ -34,8 +35,9 @@ log.basicConfig(
     level=log.DEBUG)
 log.debug(' logging has started '.center(80, '-'))
 
+util.flushLogger()
 
-LOG_FIX_PATH = True
+LOG_FIX_PATH = False
 
 def logFixPath(msg):
     if LOG_FIX_PATH:

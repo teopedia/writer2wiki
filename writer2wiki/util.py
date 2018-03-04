@@ -21,3 +21,18 @@ def iterUnoCollection(unoCollection):
     enum = unoCollection.createEnumeration()
     while enum.hasMoreElements():
         yield enum.nextElement()
+
+def flushLogger():
+    import logging as log
+
+    for weakRef in log._handlerList:
+        handler = weakRef()
+        if not handler:
+            continue
+
+        try:
+            print('flushing log handler:', handler)
+            handler.acquire()
+            handler.flush()
+        finally:
+            handler.release()
