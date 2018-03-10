@@ -5,7 +5,7 @@
              xmlns:xlink = "http://www.w3.org/1999/xlink">
 
     <identifier value="com.github.teopedia.writer2wiki" />
-    <version value="0.10"/>
+    <version value="0.11"/>
 
     <dependencies>
         <libre:LibreOffice-minimal-version value="5.4" descr:name="LibreOffice 5.4"/>
