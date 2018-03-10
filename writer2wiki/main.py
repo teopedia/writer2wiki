@@ -64,9 +64,9 @@ def fixPythonImportPath():
 
 
 try:
-    from writer2wiki.util import flushLogger
-
     fixPythonImportPath()
+
+    from writer2wiki.util import flushLogger
     flushLogger()
 except:
     log.critical("failed to init module 'main'", exc_info=True)
