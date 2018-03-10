@@ -104,6 +104,7 @@ class BaseConverter(metaclass=ABCMeta):
                         paragraphDecorator.addPortion(portionDecorator)
 
                 elif portionType == TextPortionType.FOOTNOTE:
+                    # TODO convert: recognize endnotes - it has same portion type
                     caption = portion.getString()
                     footConverter = self.__class__()
                     footConverter._convertXTextObject(portion.Footnote, userStylesMapper)

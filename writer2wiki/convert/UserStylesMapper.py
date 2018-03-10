@@ -110,12 +110,13 @@ class UserStylesMapper:
                     '#  \n' \
                     '# For example, if Office document contains paragraph with text `Introduction` and style \n' \
                     '# `my-title`, and there is following line in this file: \n' \
-                    '#  \n' \
                     '#     my-title = my-wiki-namespace:big-title \n' \
                     '#  \n' \
                     '# Converted wiki-text will look like: \n' \
-                    '#  \n' \
                     '#     {{my-wiki-namespace:big-title|Introduction}} \n' \
+                    '#  \n' \
+                    '# To ignore style, leave right-hand side of assignment blank: \n' \
+                    '#      my-ignored-style = \n' \
                     '#  \n' \
                     '# Spaces and tabs at the beginnings and endings of lines, or around `=` symbol are ignored. \n' \
                     '# Lines beginning with `#` symbol are ignored as well (like this note), you can use that to \n' \
