@@ -21,7 +21,6 @@ See README.md for debugging tips and a full list of supported styles
 import unohelper
 from com.sun.star.task import XJobExecutor
 
-import util
 import logging as log
 import os.path
 
@@ -34,8 +33,6 @@ log.basicConfig(
     format='%(asctime)s [%(levelname)s] %(message)s',
     level=log.DEBUG)
 log.debug(' logging has started '.center(80, '-'))
-
-util.flushLogger()
 
 LOG_FIX_PATH = False
 
@@ -78,7 +75,15 @@ def fixPythonImportPath():
     logFixPath('leaving fix path')
 
 
-fixPythonImportPath()
+try:
+    from writer2wiki.util import flushLogger
+
+    fixPythonImportPath()
+    flushLogger()
+except:
+    log.critical("failed to init module 'main'", exc_info=True)
+    log.shutdown()
+    raise
 
 
 def getOfficeAppContext(haveTriedToStartOffice=False):
