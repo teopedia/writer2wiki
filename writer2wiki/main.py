@@ -127,7 +127,9 @@ def convertToWiki(appContext=None):
     except Exception:
         log.critical("Unexpected exception", exc_info=True)
         log.critical(' Conversion failed '.center(80, '-'))
-    log.shutdown()
+        raise
+    finally:
+        log.shutdown()
 
 
 class Writer2WikiComp(unohelper.Base, XJobExecutor):
