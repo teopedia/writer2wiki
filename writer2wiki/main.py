@@ -102,6 +102,17 @@ def getOfficeAppContext(haveTriedToStartOffice=False):
     return context
 
 def convertToWiki(appContext=None):
+    """
+    This is effectively our "main" function, which performs conversion of the document.
+
+    It is called from all possible script entry points:
+    * from extension
+    * from macro
+    * from command line / IDE
+
+    (see entry points setup at the end file)
+    """
+
     log.info(' Conversion started '.center(80, '-'))
     try:
         from writer2wiki.convert.WikiConverter import WikiConverter
