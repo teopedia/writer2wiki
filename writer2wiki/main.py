@@ -122,7 +122,7 @@ def convertToWiki(appContext=None):
                 appContext = getOfficeAppContext()
 
         c = WikiConverter()
-        c.convert(appContext)
+        c.convertCurrentDocument(appContext)
         log.info(' Conversion done OK '.center(80, '-'))
     except Exception:
         log.critical("Unexpected exception", exc_info=True)

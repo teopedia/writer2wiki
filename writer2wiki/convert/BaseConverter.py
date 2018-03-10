@@ -54,7 +54,7 @@ class BaseConverter(metaclass=ABCMeta):
         # type: () -> str
         pass
 
-    def convert(self, context):
+    def convertCurrentDocument(self, context):
         ui = OfficeUi(context)
         desktop = Service.create(Service.DESKTOP, context)
         document = desktop.getCurrentComponent()
@@ -72,8 +72,23 @@ class BaseConverter(metaclass=ABCMeta):
         userStylesMapper = UserStylesMapper(docPath.parent / 'wiki-styles.txt')
         textModel = document.getText()
 
+        self._convertXTextObject(textModel, userStylesMapper)
+
+        dbg.printCentered('done')
+        print('result:\n' + self.getResult())
+
+        targetFile = docPath.with_suffix(self.getFileExtension())
+        with openW2wFile(targetFile, 'w') as f:
+            f.write(self.getResult())
+
+        if not userStylesMapper.saveStyles():
+            ui.messageBox(ui_text.failedToSaveMappingsFile(userStylesMapper.getFilePath()))
+
+        ui.messageBox(ui_text.conversionDone(targetFile, userStylesMapper))
+
+    def _convertXTextObject(self, textUno, userStylesMapper):
         from writer2wiki.util import iterUnoCollection
-        for paragraph in iterUnoCollection(textModel):
+        for paragraph in iterUnoCollection(textUno):
             if Service.objectSupports(paragraph, Service.TEXT_TABLE):
                 print('skip text table')
                 continue
@@ -92,18 +107,6 @@ class BaseConverter(metaclass=ABCMeta):
                     paragraphDecorator.addPortion(portionDecorator)
 
             self.addParagraph(paragraphDecorator)
-
-        dbg.printCentered('done')
-        print('result:\n' + self.getResult())
-
-        targetFile = docPath.with_suffix(self.getFileExtension())
-        with openW2wFile(targetFile, 'w') as f:
-            f.write(self.getResult())
-
-        if not userStylesMapper.saveStyles():
-            ui.messageBox(ui_text.failedToSaveMappingsFile(userStylesMapper.getFilePath()))
-
-        ui.messageBox(ui_text.conversionDone(targetFile, userStylesMapper))
 
     def _buildTextPortionTypeText(self, portionUno):
         text = self.replaceNonBreakingChars(portionUno.getString())
