@@ -103,3 +103,11 @@ class MbButtons:
     DEFAULT_BUTTON_YES         = 0x40000
     DEFAULT_BUTTON_NO          = 0x50000
     DEFAULT_BUTTON_IGNORE      = 0x60000
+
+class MbResult:
+    CANCEL = 0
+    OK     = 1
+    YES    = 2
+    NO     = 3
+    RETRY  = 4
+    IGNORE = 5

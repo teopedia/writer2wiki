@@ -78,13 +78,22 @@ class BaseConverter(metaclass=ABCMeta):
         print('result:\n' + self.getResult())
 
         targetFile = docPath.with_suffix(self.getFileExtension())
+        if targetFile.exists():
+            from writer2wiki.w2w_office.lo_enums import MbType, MbButtons, MbResult
+            answer = ui.messageBox(
+                ui_text.conversionDoneAndTargetFileExists(targetFile, userStylesMapper),
+                boxType=MbType.QUERYBOX,
+                buttons=MbButtons.BUTTONS_OK_CANCEL)
+            if answer == MbResult.CANCEL:
+                return
+        else:
+            ui.messageBox(ui_text.conversionDoneAndTargetFileDoesNotExist(targetFile, userStylesMapper))
+
         with openW2wFile(targetFile, 'w') as f:
             f.write(self.getResult())
 
         if not userStylesMapper.saveStyles():
             ui.messageBox(ui_text.failedToSaveMappingsFile(userStylesMapper.getFilePath()))
-
-        ui.messageBox(ui_text.conversionDone(targetFile, userStylesMapper))
 
     def _convertXTextObject(self, textUno, userStylesMapper):
         from writer2wiki.util import iterUnoCollection

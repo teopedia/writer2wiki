@@ -3,7 +3,9 @@
 #     (See accompanying file ../LICENSE.txt or copy at
 #           http://www.boost.org/LICENSE_1_0.txt)
 
+
 # TODO add localization
+from pathlib import Path
 
 from writer2wiki.convert.UserStylesMapper import UserStylesMapper
 
@@ -36,7 +38,7 @@ def _missingStylesDescription(userStylesMapper):
 
     return result
 
-def conversionDone(convertedFilename, mapper):
+def conversionDoneAndTargetFileDoesNotExist(convertedFilename, mapper):
     """
     :param str|Path convertedFilename:
     :param UserStylesMapper mapper:
@@ -61,6 +63,15 @@ def conversionDone(convertedFilename, mapper):
 
     msg += '\n\nOpen style-map file in any editor to correct mappings (instructions on how to do that are in the ' \
            'beginning of the file).' \
+
+    return msg
+
+def conversionDoneAndTargetFileExists(targetFile: Path, mapper: UserStylesMapper):
+    msg = "Target file '{}' already exists. Overwrite it?".format(targetFile)
+
+    # if file exists, assume user is familiar with the extension and knows what style-map file is
+    if mapper.hasMissingStyles():
+        msg += '\n\n(added {} to style-map file, {})'.format(_missingStylesDescription(mapper), mapper.getFilePath())
 
     return msg
 
