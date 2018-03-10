@@ -29,6 +29,9 @@ class WikiParagraphDecorator:
         """
         self._content += portion.getResult()
 
+    def addFootnote(self, caption, content):
+        self._content += "<ref>{}</ref>".format(content)
+
     def isEmpty(self):
         return len(self.getContent()) == 0
 

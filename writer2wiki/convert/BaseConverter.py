@@ -92,6 +92,7 @@ class BaseConverter(metaclass=ABCMeta):
             if Service.objectSupports(paragraph, Service.TEXT_TABLE):
                 print('skip text table')
                 continue
+
             dbg.printCentered('para iter')
             paragraphDecorator = self.makeParagraphDecorator(paragraph, userStylesMapper)
 
@@ -99,12 +100,18 @@ class BaseConverter(metaclass=ABCMeta):
                 portionType = portion.TextPortionType
                 if portionType == TextPortionType.TEXT:
                     portionDecorator = self._buildTextPortionTypeText(portion)
+                    if portionDecorator is not None:
+                        paragraphDecorator.addPortion(portionDecorator)
+
+                elif portionType == TextPortionType.FOOTNOTE:
+                    caption = portion.getString()
+                    footConverter = self.__class__()
+                    footConverter._convertXTextObject(portion.Footnote, userStylesMapper)
+                    paragraphDecorator.addFootnote(caption, footConverter.getResult())
+
                 else:
                     print('skip portion with not supported type: ' + portionType)
                     continue
-
-                if portionDecorator is not None:
-                    paragraphDecorator.addPortion(portionDecorator)
 
             self.addParagraph(paragraphDecorator)
 
