@@ -34,12 +34,6 @@ log.basicConfig(
     level=log.DEBUG)
 log.debug(' logging has started '.center(80, '-'))
 
-LOG_FIX_PATH = False
-
-def logFixPath(msg):
-    if LOG_FIX_PATH:
-        log.debug(msg)
-
 def fixPythonImportPath():
     """
     Add main.py's folder to Python's import paths.
@@ -51,28 +45,22 @@ def fixPythonImportPath():
     TODO Py3.5: use pathlib
     """
 
-    logFixPath('entered fix path')
     import sys
     from inspect import getsourcefile
     from os.path import dirname, join, abspath, pardir
 
-    logFixPath('sys path: %s' % sys.path)
-
     # a hack to get this file's location, because `__file__` and `sys.argv` are not defined inside macro
     thisFilePath = getsourcefile(lambda: 0)
-
-    logFixPath('this file name: %s' % thisFilePath)
 
     # relative path to parent dir like `<path to py macros or extension>\writer2wiki-ext\writer2wiki\..`
     parentDir = join(dirname(thisFilePath), pardir)
 
     parentDirAbs = abspath(parentDir)
     if parentDirAbs not in sys.path:
-        logFixPath('appending dir: %s' % parentDirAbs)
+        log.debug('appending dir: %s' % parentDirAbs)
         sys.path.append(parentDirAbs)
     else:
-        logFixPath('NOT appending %s' % parentDirAbs)
-    logFixPath('leaving fix path')
+        log.debug('NOT appending %s' % parentDirAbs)
 
 
 try:
