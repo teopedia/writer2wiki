@@ -77,6 +77,7 @@ class WikiConverter(BaseConverter):
             nonlocal sameStyleBuffer, result
             sameStyleBuffer = sameStyleBuffer[: -2]  # remove last para separator before wrapping in style
             result += WikiParagraphDecorator.getStyledContent(currentStyle, sameStyleBuffer) + '\n\n'
+            sameStyleBuffer = ''
 
         for p in self._paragraphs:
             if p.getStyle() != currentStyle:
