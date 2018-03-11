@@ -35,6 +35,15 @@ class WikiParagraphDecorator:
     def isEmpty(self):
         return len(self.getContent()) == 0
 
+    def _getListId(self):
+        return self._paragraphUNO.ListId
+
+    def isListItem(self):
+        return self._getListId() != ''
+
+    def getListLevel(self):
+        return self._paragraphUNO.NumberingLevel + 1
+
     def getStyle(self):
         return self._wikiStyle
 

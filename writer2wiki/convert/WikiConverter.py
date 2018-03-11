@@ -79,13 +79,16 @@ class WikiConverter(BaseConverter):
             result += WikiParagraphDecorator.getStyledContent(currentStyle, sameStyleBuffer) + '\n\n'
 
         for p in self._paragraphs:
-            if p.getStyle() == currentStyle:
-                sameStyleBuffer += p.getContent() + '\n\n'
-                continue
-            flushBuffer()
-            sameStyleBuffer = p.getContent() + '\n\n'
-            currentStyle = p.getStyle()
+            if p.getStyle() != currentStyle:
+                flushBuffer()
+                currentStyle = p.getStyle()
 
-        flushBuffer()
+            if p.isListItem():
+                sameStyleBuffer = sameStyleBuffer[:-1]  # remove 1 line feed
+                sameStyleBuffer += '*' * p.getListLevel() + ' '
+
+            sameStyleBuffer += p.getContent() + '\n\n'
+
+        flushBuffer()  # the last style in text will not be flushed inside loop
 
         return result
