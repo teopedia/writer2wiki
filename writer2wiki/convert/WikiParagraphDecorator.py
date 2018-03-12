@@ -35,13 +35,19 @@ class WikiParagraphDecorator:
     def isEmpty(self):
         return len(self.getContent()) == 0
 
-    def _getListId(self):
-        return self._paragraphUNO.ListId
-
     def isListItem(self):
-        return self._getListId() != ''
+        return self._paragraphUNO.ListId != ''
 
     def getListLevel(self):
+        # In ideal world `getListLevel` and `isNumberedList` methods should be removed from this class and defined in
+        # separate class like WikiListItemParagraphDecorator, which inherits from this one.
+        # But since I didn't learned yet how to init base sub-object (which holds `_paragraphUNO` etc), I think that
+        # would be an overkill for these 2 one-liners.
+        #
+        # Maybe something like
+        #   from copy import copy
+        #   ...
+        #       self = copy(arg)
         return self._paragraphUNO.NumberingLevel + 1
 
     def isNumberedList(self):
