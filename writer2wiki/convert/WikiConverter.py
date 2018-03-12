@@ -86,7 +86,8 @@ class WikiConverter(BaseConverter):
 
             if p.isListItem():
                 sameStyleBuffer = sameStyleBuffer[:-1]  # remove 1 line feed
-                sameStyleBuffer += '*' * p.getListLevel() + ' '
+                listChar = '#' if p.isNumberedList() else '*'
+                sameStyleBuffer += listChar * p.getListLevel() + ' '
 
             sameStyleBuffer += p.getContent() + '\n\n'
 

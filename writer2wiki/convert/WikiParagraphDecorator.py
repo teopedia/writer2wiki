@@ -44,6 +44,16 @@ class WikiParagraphDecorator:
     def getListLevel(self):
         return self._paragraphUNO.NumberingLevel + 1
 
+    def isNumberedList(self):
+        # TODO convert. ListLabelString is empty for unordered list items and contains strings like "1.",  "I.", "(a)"
+        #      for numbered lists. Most likely, code below is not going to work in case of numbered list with custom
+        #      icons instead of text labels. But this should be OK in most cases.
+        #
+        #      I hadn't found out what proper solution should be, look at Paragraph::NumberingStyleName and
+        #      Document::getStyleFamilies() and then getByName("NumberingStyles") or something like that
+
+        return len(self._paragraphUNO.ListLabelString) > 0
+
     def getStyle(self):
         return self._wikiStyle
 
