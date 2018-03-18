@@ -13,7 +13,8 @@ from writer2wiki.convert.WikiParagraphDecorator import WikiParagraphDecorator
 
 class WikiConverter(BaseConverter):
 
-    def __init__(self):
+    def __init__(self, context):
+        super(WikiConverter, self).__init__(context)
         self._paragraphs = []  # type: List[WikiParagraphDecorator]
 
     @classmethod

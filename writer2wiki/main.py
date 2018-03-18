@@ -125,8 +125,10 @@ def convertToWiki(appContext=None):
                 # when not running as a macro, try to connect to Office through socket
                 appContext = getOfficeAppContext()
 
-        c = WikiConverter()
-        c.convertCurrentDocument(appContext)
+        c = WikiConverter(appContext)
+        if c.checkCanConvert():
+            c.convertCurrentDocument()
+
         log.info(' Conversion done OK '.center(80, '-'))
     except Exception:
         log.critical("Unexpected exception", exc_info=True)

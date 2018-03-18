@@ -54,23 +54,29 @@ class BaseConverter(metaclass=ABCMeta):
         # type: () -> str
         pass
 
-    def convertCurrentDocument(self, context):
-        ui = OfficeUi(context)
+    def __init__(self, context):
         desktop = Service.create(Service.DESKTOP, context)
-        document = desktop.getCurrentComponent()
 
-        if not Service.objectSupports(document, Service.TEXT_DOCUMENT):
+        self._context = context
+        self._document = desktop.getCurrentComponent()
+        self._ui = OfficeUi(context)
+
+    def checkCanConvert(self):
+        if not Service.objectSupports(self._document, Service.TEXT_DOCUMENT):
             # TODO more specific message: either no document is opened at all or we can't convert, for example, Calc
-            ui.messageBox(ui_text.noWriterDocumentOpened())
-            return
+            self._ui.messageBox(ui_text.noWriterDocumentOpened())
+            return False
 
-        if not document.hasLocation():
-            ui.messageBox(ui_text.docHasNoFile())
-            return
+        if not self._document.hasLocation():
+            self._ui.messageBox(ui_text.docHasNoFile())
+            return False
 
-        docPath = Path(uno.fileUrlToSystemPath(document.getLocation()))
+        return True
+
+    def convertCurrentDocument(self):
+        docPath = Path(uno.fileUrlToSystemPath(self._document.getLocation()))
         userStylesMapper = UserStylesMapper(docPath.parent / 'wiki-styles.txt')
-        textModel = document.getText()
+        textModel = self._document.getText()
 
         self._convertXTextObject(textModel, userStylesMapper)
 
@@ -80,20 +86,20 @@ class BaseConverter(metaclass=ABCMeta):
         targetFile = docPath.with_suffix(self.getFileExtension())
         if targetFile.exists():
             from writer2wiki.w2w_office.lo_enums import MbType, MbButtons, MbResult
-            answer = ui.messageBox(
+            answer = self._ui.messageBox(
                 ui_text.conversionDoneAndTargetFileExists(targetFile, userStylesMapper),
                 boxType=MbType.QUERYBOX,
                 buttons=MbButtons.BUTTONS_OK_CANCEL)
             if answer == MbResult.CANCEL:
                 return
         else:
-            ui.messageBox(ui_text.conversionDoneAndTargetFileDoesNotExist(targetFile, userStylesMapper))
+            self._ui.messageBox(ui_text.conversionDoneAndTargetFileDoesNotExist(targetFile, userStylesMapper))
 
         with openW2wFile(targetFile, 'w') as f:
             f.write(self.getResult())
 
         if not userStylesMapper.saveStyles():
-            ui.messageBox(ui_text.failedToSaveMappingsFile(userStylesMapper.getFilePath()))
+            self._ui.messageBox(ui_text.failedToSaveMappingsFile(userStylesMapper.getFilePath()))
 
     def _convertXTextObject(self, textUno, userStylesMapper):
         from writer2wiki.util import iterUnoCollection
@@ -115,7 +121,10 @@ class BaseConverter(metaclass=ABCMeta):
                 elif portionType == TextPortionType.FOOTNOTE:
                     # TODO convert: recognize endnotes - it has same portion type
                     caption = portion.getString()
-                    footConverter = self.__class__()
+
+                    # FIXME design: we don't need `context` here, this means the method should be in separate class -
+                    #               XTextObjectConverter or something like that
+                    footConverter = self.__class__(self._context)
                     footConverter._convertXTextObject(portion.Footnote, userStylesMapper)
                     paragraphDecorator.addFootnote(caption, footConverter.getResult())
 
