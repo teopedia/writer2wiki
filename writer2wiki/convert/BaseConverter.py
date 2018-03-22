@@ -60,6 +60,7 @@ class BaseConverter(metaclass=ABCMeta):
         self._context = context
         self._document = desktop.getCurrentComponent()
         self._ui = OfficeUi(context)
+        self._hasFootnotes = False
 
     def checkCanConvert(self):
         if not Service.objectSupports(self._document, Service.TEXT_DOCUMENT):
@@ -120,6 +121,7 @@ class BaseConverter(metaclass=ABCMeta):
 
                 elif portionType == TextPortionType.FOOTNOTE:
                     # TODO convert: recognize endnotes - it has same portion type
+                    self._hasFootnotes = True
                     caption = portion.getString()
 
                     # FIXME design: we don't need `context` here, this means the method should be in separate class -

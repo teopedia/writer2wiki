@@ -94,4 +94,7 @@ class WikiConverter(BaseConverter):
 
         flushBuffer()  # the last style in text will not be flushed inside loop
 
+        if self._hasFootnotes:
+            result += '<references/>\n'
+
         return result
