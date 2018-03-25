@@ -36,13 +36,13 @@ class WikiTextPortionDecorator:
         targetUrl = targetUrl + ' ' if targetUrl != self._originalText else ''
         self._result = '[' + targetUrl + self._originalText + ']'
 
-    def addPosture(self, posture):
+    def handlePosture(self, posture):
         """italic etc"""
         if posture != FontSlant.ITALIC:
             print('unexpected posture:', posture)
         self._surround("''")
 
-    def addWeight(self, weight):
+    def handleCharWeight(self, weight):
         if weight < FontWeight.NORMAL:
             print('thin weights are not supported, got:', weight)
             return
@@ -62,7 +62,7 @@ class WikiTextPortionDecorator:
         if mappedStyle != CssTextDecorationStyle.SOLID:  # solid is default
             self._addCssStyle('text-decoration-style', mappedStyle)
 
-    def addStrikeout(self, strikeoutKind):
+    def handleCharStrikeout(self, strikeoutKind):
         STYLES = {FontStrikeout.SINGLE: CssTextDecorationStyle.SOLID,
                   FontStrikeout.DOUBLE: CssTextDecorationStyle.DOUBLE,
                   FontStrikeout.BOLD  : CssTextDecorationStyle.SOLID,
@@ -71,7 +71,7 @@ class WikiTextPortionDecorator:
                   }
         self._addTextDecorationStyle('line-through', strikeoutKind, STYLES)
 
-    def addUnderLine(self, underlineKind, color):
+    def handleCharUnderline(self, underlineKind):
         STYLES = {FontUnderline.SINGLE:         CssTextDecorationStyle.SOLID,
                   FontUnderline.DOUBLE:         CssTextDecorationStyle.DOUBLE,
                   FontUnderline.DOTTED:         CssTextDecorationStyle.DOTTED,
@@ -91,10 +91,11 @@ class WikiTextPortionDecorator:
                   FontUnderline.BOLDWAVE:       CssTextDecorationStyle.WAVY
                   }
         self._addTextDecorationStyle('underline', underlineKind, STYLES)
-        if color:
-            self._addCssStyle('text-decoration-color', intToHtmlHex(color))
 
-    def addCaseMap(self, caseMapKind):
+    def handleCharUnderlineColor(self, color):
+        self._addCssStyle('text-decoration-color', intToHtmlHex(color))
+
+    def handleCharCaseMap(self, caseMapKind):
         STYLES = {CaseMap.UPPERCASE: ['text-transform', 'uppercase'],
                   CaseMap.LOWERCASE: ['text-transform', 'lowercase'],
                   CaseMap.TITLE:     ['text-transform', 'capitalize'],
@@ -106,14 +107,18 @@ class WikiTextPortionDecorator:
         style = STYLES[caseMapKind]
         self._addCssStyle(style[0], style[1])
 
-    def addFontColor(self, color):
+    def handleCharColor(self, color):
         self._addCssStyle('color', intToHtmlHex(color))
 
-    def addSubScript(self):
-        self._surroundWithTag('sub')
+    def handleCharEscapement(self, escapement):
+        if escapement == 0:
+            print('BUG: invoked handleCharEscapement with 0 escapement')
+            return
 
-    def addSuperScript(self):
-        self._surroundWithTag('sup')
+        if escapement > 0:
+            self._surroundWithTag('sup')
+        else:
+            self._surroundWithTag('sub')
 
     def getResult(self):
         if len(self._cssStyles):

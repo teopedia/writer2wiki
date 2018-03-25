@@ -7,6 +7,8 @@
 import uno
 from abc import ABCMeta, abstractclassmethod, abstractmethod
 
+from convert.WikiTextPortionDecorator import WikiTextPortionDecorator
+from convert.WikiParagraphDecorator import WikiParagraphDecorator
 from writer2wiki.OfficeUi import OfficeUi
 from writer2wiki.w2w_office.lo_enums import \
     CaseMap, FontSlant, TextPortionType, FontStrikeout, FontWeight, FontUnderline
@@ -20,22 +22,19 @@ class BaseConverter(metaclass=ABCMeta):
 
     @classmethod
     @abstractclassmethod
-    def makeTextPortionDecorator(cls, text): pass
+    def makeTextPortionDecorator(cls, text) -> WikiTextPortionDecorator : pass
 
     @classmethod
     @abstractclassmethod
-    def makeParagraphDecorator(cls, paragraphUNO, userStylesMap): pass
+    def makeParagraphDecorator(cls, paragraphUNO, userStylesMap) -> WikiParagraphDecorator: pass
 
     @classmethod
     @abstractclassmethod
-    def getFileExtension(cls):
-        # type: () -> str
-        pass
+    def getFileExtension(cls) -> str: pass
 
     @classmethod
     @abstractclassmethod
-    def replaceNonBreakingChars(cls, text):
-        # type: (str) -> str
+    def replaceNonBreakingChars(cls, text: str) -> str:
         """
         Replace non-breaking space and dash with html entities for better readability of wiki-pages sources and safe
         copy-pasting to editors without proper Unicode support
@@ -45,13 +44,11 @@ class BaseConverter(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def addParagraph(self, paragraphDecorator):
-        # type: () -> None
+    def addParagraph(self, paragraphDecorator: WikiParagraphDecorator) -> None:
         pass
 
     @abstractmethod
-    def getResult(self):
-        # type: () -> str
+    def getResult(self) -> str:
         pass
 
     def __init__(self, context):
@@ -62,7 +59,7 @@ class BaseConverter(metaclass=ABCMeta):
         self._ui = OfficeUi(context)
         self._hasFootnotes = False
 
-    def checkCanConvert(self):
+    def checkCanConvert(self) -> bool:
         if not Service.objectSupports(self._document, Service.TEXT_DOCUMENT):
             # TODO more specific message: either no document is opened at all or we can't convert, for example, Calc
             self._ui.messageBox(ui_text.noWriterDocumentOpened())
@@ -148,31 +145,31 @@ class BaseConverter(metaclass=ABCMeta):
             portionDecorator.addHyperLink(link)
 
         if not text.isspace():
-            if portionUno.CharPosture != FontSlant.NONE:  # italic
-                portionDecorator.addPosture(portionUno.CharPosture)
+            if portionUno.CharPosture != FontSlant.NONE:
+                portionDecorator.handlePosture(portionUno.CharPosture)
 
-            if portionUno.CharWeight != FontWeight.NORMAL and not link:  # bold
+            if portionUno.CharWeight != FontWeight.NORMAL and not link:
                 # FIX CONVERT: handle non-bold links (possible in Office)
-                portionDecorator.addWeight(portionUno.CharWeight)
+                portionDecorator.handleCharWeight(portionUno.CharWeight)
 
             if portionUno.CharCaseMap != CaseMap.NONE:
-                portionDecorator.addCaseMap(portionUno.CharCaseMap)
+                portionDecorator.handleCharCaseMap(portionUno.CharCaseMap)
 
             if portionUno.CharColor != -1 and not link:
                 # FIX CONVERT: handle custom-colored links (possible in Office)
-                portionDecorator.addFontColor(portionUno.CharColor)
+                portionDecorator.handleCharColor(portionUno.CharColor)
 
-            if portionUno.CharEscapement < 0:
-                portionDecorator.addSubScript()
-            if portionUno.CharEscapement > 0:
-                portionDecorator.addSuperScript()
+            if portionUno.CharEscapement != 0:
+                portionDecorator.handleCharEscapement(portionUno.CharEscapement)
 
         if portionUno.CharStrikeout != FontStrikeout.NONE:
-            portionDecorator.addStrikeout(portionUno.CharStrikeout)
+            portionDecorator.handleCharStrikeout(portionUno.CharStrikeout)
 
         if portionUno.CharUnderline not in [FontUnderline.NONE, FontUnderline.DONTKNOW] and not link:
             # FIX CONVERT: handle links without underlines (possible in Office)
-            underlineColor = portionUno.CharUnderlineColor if portionUno.CharUnderlineHasColor else None
-            portionDecorator.addUnderLine(portionUno.CharUnderline, underlineColor)
+            portionDecorator.handleCharUnderline(portionUno.CharUnderline)
+
+        if portionUno.CharUnderlineColor != -1:
+            portionDecorator.handleCharUnderlineColor(portionUno.CharUnderlineColor)
 
         return portionDecorator
