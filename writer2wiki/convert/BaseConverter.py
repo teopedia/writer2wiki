@@ -138,38 +138,36 @@ class BaseConverter(metaclass=ABCMeta):
         if not text:  # blank line
             return None
 
+        PROPERTIES_VISIBLE_ON_WHITESPACE = [
+            'HyperLinkURL'
+            'CharStrikeout',
+            'CharUnderline',
+            'CharUnderlineColor'
+        ]
+
         portionDecorator = self.makeTextPortionDecorator(text)
+        handledProperties = portionDecorator.getSupportedUnoProperties()
 
-        link = portionUno.HyperLinkURL
-        if link:  # link should go first for proper wiki markup
-            portionDecorator.addHyperLink(link)
+        # CharStyleName ParaStyleName
+        # FIXME merge: check no extra underline and color for hyperlinks
+        for unoPropName in handledProperties:
+            if text.isspace() and unoPropName not in PROPERTIES_VISIBLE_ON_WHITESPACE:
+                continue
 
-        if not text.isspace():
-            if portionUno.CharPosture != FontSlant.NONE:
-                portionDecorator.handlePosture(portionUno.CharPosture)
+            unoPropValue = getattr(portionUno, unoPropName, None)
+            if unoPropValue is None:
+                print('ERR: portion UNO has no property `{}`'.format(unoPropName))
+                continue
+            if unoPropValue == portionUno.getPropertyDefault(unoPropName):
+                print('skip prop `{}` with default value `{}`'.format(unoPropName, unoPropValue))
+                continue
 
-            if portionUno.CharWeight != FontWeight.NORMAL and not link:
-                # FIX CONVERT: handle non-bold links (possible in Office)
-                portionDecorator.handleCharWeight(portionUno.CharWeight)
+            method = getattr(portionDecorator, 'handle' + unoPropName, None)
+            if method is None:
+                print('ERR: `{}` has no handler method for property `{}`'
+                      .format(portionDecorator.__class__, unoPropName))
+                continue
 
-            if portionUno.CharCaseMap != CaseMap.NONE:
-                portionDecorator.handleCharCaseMap(portionUno.CharCaseMap)
-
-            if portionUno.CharColor != -1 and not link:
-                # FIX CONVERT: handle custom-colored links (possible in Office)
-                portionDecorator.handleCharColor(portionUno.CharColor)
-
-            if portionUno.CharEscapement != 0:
-                portionDecorator.handleCharEscapement(portionUno.CharEscapement)
-
-        if portionUno.CharStrikeout != FontStrikeout.NONE:
-            portionDecorator.handleCharStrikeout(portionUno.CharStrikeout)
-
-        if portionUno.CharUnderline not in [FontUnderline.NONE, FontUnderline.DONTKNOW] and not link:
-            # FIX CONVERT: handle links without underlines (possible in Office)
-            portionDecorator.handleCharUnderline(portionUno.CharUnderline)
-
-        if portionUno.CharUnderlineColor != -1:
-            portionDecorator.handleCharUnderlineColor(portionUno.CharUnderlineColor)
+            method(unoPropValue)
 
         return portionDecorator

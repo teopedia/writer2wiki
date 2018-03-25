@@ -11,6 +11,19 @@ from writer2wiki.util import *
 
 class WikiTextPortionDecorator:
 
+    @classmethod
+    def getSupportedUnoProperties(cls):
+        return [
+            'HyperLinkURL',     # link must go first for proper wiki markup
+            'CharPosture',      # italic
+            'CharWeight',       # bold
+            'CharCaseMap',      # small-caps, capitalize etc
+            'CharColor',        # font color
+            'CharEscapement',   # subscript / superscript
+            'CharStrikeout',
+            'CharUnderline'
+        ]
+
     def __init__(self, text):
         self._originalText = text
         self._cssStyles = {}
@@ -32,11 +45,11 @@ class WikiTextPortionDecorator:
     def _surround(self, with_string):
         self._result = with_string + self._result + with_string
 
-    def addHyperLink(self, targetUrl):
+    def handleHyperLinkURL(self, targetUrl):
         targetUrl = targetUrl + ' ' if targetUrl != self._originalText else ''
         self._result = '[' + targetUrl + self._originalText + ']'
 
-    def handlePosture(self, posture):
+    def handleCharPosture(self, posture):
         """italic etc"""
         if posture != FontSlant.ITALIC:
             print('unexpected posture:', posture)
