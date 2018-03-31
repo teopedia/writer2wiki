@@ -14,14 +14,14 @@ class WikiTextPortionDecorator:
     @classmethod
     def getSupportedUnoProperties(cls):
         return [
-            'HyperLinkURL',     # link must go first for proper wiki markup
             'CharPosture',      # italic
             'CharWeight',       # bold
             'CharCaseMap',      # small-caps, capitalize etc
             'CharColor',        # font color
             'CharEscapement',   # subscript / superscript
             'CharStrikeout',
-            'CharUnderline'
+            'CharUnderline',
+            'CharUnderlineColor'
         ]
 
     def __init__(self, text):
@@ -32,9 +32,12 @@ class WikiTextPortionDecorator:
     def __str__(self):
         return self.getResult()
 
-    def _addCssStyle(self, name, value):
+    def _addCssStyle(self, name, value, appendIfExist=False):
         if name in self._cssStyles:
-            print('WARN: change `{}` value from {} to {}'.format(name, self._cssStyles[name], value))
+            if appendIfExist:
+                self._cssStyles[name] = self._cssStyles[name] + ' ' + value
+            else:
+                print('WARN: change `{}` value from {} to {}'.format(name, self._cssStyles[name], value))
         self._cssStyles[name] = value
 
     def _surroundWithTag(self, tag, tagAttributes=''):
@@ -45,7 +48,7 @@ class WikiTextPortionDecorator:
     def _surround(self, with_string):
         self._result = with_string + self._result + with_string
 
-    def handleHyperLinkURL(self, targetUrl):
+    def addHyperLinkURL(self, targetUrl):
         targetUrl = targetUrl + ' ' if targetUrl != self._originalText else ''
         self._result = '[' + targetUrl + self._originalText + ']'
 
@@ -69,14 +72,24 @@ class WikiTextPortionDecorator:
             print('ignore unexpected {} kind: {}'.format(decorationType, officeStyleKind))
             return
 
-        self._addCssStyle('text-decoration', decorationType)
-
         mappedStyle = styleMap[officeStyleKind]
+        if mappedStyle is None:
+            # We add properties only if they differ from portion or paragraph style.
+            # If mapped style is None (no underline or strike-through), it means we override style.
+            # For example, style has underline and we want portion without underline.
+            # LIMITATION: 'display: inline-block' will remove all text-decoration's (underline, strike-through)
+            #             inherited from style, but this case should be pretty rare, so we will not complicate
+            #             code to handle that
+            self._addCssStyle('display', 'inline-block')
+            return
+
+        self._addCssStyle('text-decoration', decorationType, True)
         if mappedStyle != CssTextDecorationStyle.SOLID:  # solid is default
             self._addCssStyle('text-decoration-style', mappedStyle)
 
     def handleCharStrikeout(self, strikeoutKind):
-        STYLES = {FontStrikeout.SINGLE: CssTextDecorationStyle.SOLID,
+        STYLES = {FontStrikeout.NONE:   None,
+                  FontStrikeout.SINGLE: CssTextDecorationStyle.SOLID,
                   FontStrikeout.DOUBLE: CssTextDecorationStyle.DOUBLE,
                   FontStrikeout.BOLD  : CssTextDecorationStyle.SOLID,
                   FontStrikeout.SLASH : CssTextDecorationStyle.DOUBLE,
@@ -85,7 +98,8 @@ class WikiTextPortionDecorator:
         self._addTextDecorationStyle('line-through', strikeoutKind, STYLES)
 
     def handleCharUnderline(self, underlineKind):
-        STYLES = {FontUnderline.SINGLE:         CssTextDecorationStyle.SOLID,
+        STYLES = {FontUnderline.NONE:           None,
+                  FontUnderline.SINGLE:         CssTextDecorationStyle.SOLID,
                   FontUnderline.DOUBLE:         CssTextDecorationStyle.DOUBLE,
                   FontUnderline.DOTTED:         CssTextDecorationStyle.DOTTED,
                   FontUnderline.DASH:           CssTextDecorationStyle.DASHED,
@@ -106,6 +120,9 @@ class WikiTextPortionDecorator:
         self._addTextDecorationStyle('underline', underlineKind, STYLES)
 
     def handleCharUnderlineColor(self, color):
+        if color == -1:
+            print('WARN: tried to handle underline color == -1')
+            return
         self._addCssStyle('text-decoration-color', intToHtmlHex(color))
 
     def handleCharCaseMap(self, caseMapKind):

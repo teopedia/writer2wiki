@@ -21,19 +21,19 @@ import writer2wiki.debug_utils as dbg
 class BaseConverter(metaclass=ABCMeta):
 
     @classmethod
-    @abstractclassmethod
+    @abstractmethod
     def makeTextPortionDecorator(cls, text) -> WikiTextPortionDecorator : pass
 
     @classmethod
-    @abstractclassmethod
+    @abstractmethod
     def makeParagraphDecorator(cls, paragraphUNO, userStylesMap) -> WikiParagraphDecorator: pass
 
     @classmethod
-    @abstractclassmethod
+    @abstractmethod
     def getFileExtension(cls) -> str: pass
 
     @classmethod
-    @abstractclassmethod
+    @abstractmethod
     def replaceNonBreakingChars(cls, text: str) -> str:
         """
         Replace non-breaking space and dash with html entities for better readability of wiki-pages sources and safe
@@ -110,6 +110,7 @@ class BaseConverter(metaclass=ABCMeta):
             paragraphDecorator = self.makeParagraphDecorator(paragraph, userStylesMapper)
 
             for portion in iterUnoCollection(paragraph):
+                dbg.printCentered('portion iter: ' + portion.getString())
                 portionType = portion.TextPortionType
                 if portionType == TextPortionType.TEXT:
                     portionDecorator = self._buildTextPortionTypeText(portion)
@@ -146,28 +147,65 @@ class BaseConverter(metaclass=ABCMeta):
         ]
 
         portionDecorator = self.makeTextPortionDecorator(text)
-        handledProperties = portionDecorator.getSupportedUnoProperties()
 
-        # CharStyleName ParaStyleName
-        # FIXME merge: check no extra underline and color for hyperlinks
+        # link must go first for proper wiki markup
+        if portionUno.HyperLinkURL:
+            # FIXME merge: check no extra underline and color for hyperlinks
+            portionDecorator.addHyperLinkURL(portionUno.HyperLinkURL)
+
+        handledProperties = portionDecorator.getSupportedUnoProperties()
         for unoPropName in handledProperties:
             if text.isspace() and unoPropName not in PROPERTIES_VISIBLE_ON_WHITESPACE:
                 continue
 
-            unoPropValue = getattr(portionUno, unoPropName, None)
-            if unoPropValue is None:
+            propValue = getattr(portionUno, unoPropName, None)
+            if propValue is None:
                 print('ERR: portion UNO has no property `{}`'.format(unoPropName))
                 continue
-            if unoPropValue == portionUno.getPropertyDefault(unoPropName):
-                print('skip prop `{}` with default value `{}`'.format(unoPropName, unoPropValue))
+            if self._propertyIsInStyleOrIsDefault(portionUno, unoPropName):
                 continue
 
+            print('handle prop `{}` with value `{}`'.format(unoPropName, propValue))
             method = getattr(portionDecorator, 'handle' + unoPropName, None)
             if method is None:
                 print('ERR: `{}` has no handler method for property `{}`'
                       .format(portionDecorator.__class__, unoPropName))
                 continue
 
-            method(unoPropValue)
+            method(propValue)
 
         return portionDecorator
+
+    def _propertyIsInStyleOrIsDefault(self, portionUno, unoPropName):
+        # styles docs: https://wiki.openoffice.org/wiki/Documentation/DevGuide/Text/Overall_Document_Features
+
+        def propertyIsInStyle(styleFamilyName, styleName):
+            nonlocal portionUno, unoPropName
+
+            if styleName == '':  # no para or char style for property
+                print('style `{:<18}` is not set'.format(styleFamilyName))
+                return False
+
+            portionPropValue = getattr(portionUno, unoPropName)
+
+            # TODO perf: check if we should cache this (functools.memoize ?)
+            familyStyles = self._document.getStyleFamilies().getByName(styleFamilyName)
+            style = familyStyles.getByName(styleName)
+            stylePropValue = getattr(style, unoPropName)
+
+            print('style `{:<18}`, prop {:<13} | portionVal: {}, styleVal: {} | equals: {}'.
+                  format(styleName, unoPropName, portionPropValue, stylePropValue, stylePropValue == portionPropValue))
+
+            return stylePropValue == portionPropValue
+
+        inDefaultStyle = propertyIsInStyle('CharacterStyles', 'Default Style')
+        inPortionStyle = propertyIsInStyle('CharacterStyles', portionUno.CharStyleName)
+        inParaStyle    = propertyIsInStyle('ParagraphStyles', portionUno.ParaStyleName)
+
+        if not inDefaultStyle and inPortionStyle:
+            return True
+
+        if portionUno.ParaStyleName != '':
+            return inParaStyle
+
+        return inDefaultStyle  # in the end check default style
