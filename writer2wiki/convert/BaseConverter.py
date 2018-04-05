@@ -22,7 +22,7 @@ class BaseConverter(metaclass=ABCMeta):
 
     @classmethod
     @abstractmethod
-    def makeTextPortionDecorator(cls, text) -> WikiTextPortionDecorator : pass
+    def makeTextPortionDecorator(cls, portionUno, userStylesMapper) -> WikiTextPortionDecorator : pass
 
     @classmethod
     @abstractmethod
@@ -79,7 +79,6 @@ class BaseConverter(metaclass=ABCMeta):
         self._convertXTextObject(textModel, userStylesMapper)
 
         dbg.printCentered('done')
-        print('result:\n' + self.getResult())
 
         targetFile = docPath.with_suffix(self.getFileExtension())
         if targetFile.exists():
@@ -101,19 +100,20 @@ class BaseConverter(metaclass=ABCMeta):
 
     def _convertXTextObject(self, textUno, userStylesMapper):
         from writer2wiki.util import iterUnoCollection
-        for paragraph in iterUnoCollection(textUno):
+
+        for index, paragraph in enumerate(iterUnoCollection(textUno)):
+            if (index + 1) % 5 == 0:
+                print('iter #', index + 1, 'out of', self._document.ParagraphCount)
             if Service.objectSupports(paragraph, Service.TEXT_TABLE):
                 print('skip text table')
                 continue
 
-            dbg.printCentered('para iter')
             paragraphDecorator = self.makeParagraphDecorator(paragraph, userStylesMapper)
 
             for portion in iterUnoCollection(paragraph):
-                dbg.printCentered('portion iter: ' + portion.getString())
                 portionType = portion.TextPortionType
                 if portionType == TextPortionType.TEXT:
-                    portionDecorator = self._buildTextPortionTypeText(portion)
+                    portionDecorator = self._buildTextPortionTypeText(portion, userStylesMapper)
                     if portionDecorator is not None:
                         paragraphDecorator.addPortion(portionDecorator)
 
@@ -134,7 +134,7 @@ class BaseConverter(metaclass=ABCMeta):
 
             self.addParagraph(paragraphDecorator)
 
-    def _buildTextPortionTypeText(self, portionUno):
+    def _buildTextPortionTypeText(self, portionUno, userStylesMapper):
         text = self.replaceNonBreakingChars(portionUno.getString())
         if not text:  # blank line
             return None
@@ -146,7 +146,7 @@ class BaseConverter(metaclass=ABCMeta):
             'CharUnderlineColor'
         ]
 
-        portionDecorator = self.makeTextPortionDecorator(text)
+        portionDecorator = self.makeTextPortionDecorator(portionUno, userStylesMapper)
 
         # link must go first for proper wiki markup
         if portionUno.HyperLinkURL:
@@ -165,7 +165,6 @@ class BaseConverter(metaclass=ABCMeta):
             if self._propertyIsInStyleOrIsDefault(portionUno, unoPropName):
                 continue
 
-            print('handle prop `{}` with value `{}`'.format(unoPropName, propValue))
             method = getattr(portionDecorator, 'handle' + unoPropName, None)
             if method is None:
                 print('ERR: `{}` has no handler method for property `{}`'
@@ -183,7 +182,7 @@ class BaseConverter(metaclass=ABCMeta):
             nonlocal portionUno, unoPropName
 
             if styleName == '':  # no para or char style for property
-                print('style `{:<18}` is not set'.format(styleFamilyName))
+                # print('style `{:<18}` is not set'.format(styleFamilyName))
                 return False
 
             portionPropValue = getattr(portionUno, unoPropName)
@@ -193,11 +192,12 @@ class BaseConverter(metaclass=ABCMeta):
             style = familyStyles.getByName(styleName)
             stylePropValue = getattr(style, unoPropName)
 
-            print('style `{:<18}`, prop {:<13} | portionVal: {}, styleVal: {} | equals: {}'.
-                  format(styleName, unoPropName, portionPropValue, stylePropValue, stylePropValue == portionPropValue))
+            # print('style `{:<18}`, prop {:<14} | portionVal: {}, styleVal: {} | equals: {}'.
+            #       format(styleName, unoPropName, portionPropValue, stylePropValue, stylePropValue == portionPropValue))
 
             return stylePropValue == portionPropValue
 
+        # FIXME merge: check if 'Default Style' has same name in Russian locale (should be 'Standard' ?)
         inDefaultStyle = propertyIsInStyle('CharacterStyles', 'Default Style')
         inPortionStyle = propertyIsInStyle('CharacterStyles', portionUno.CharStyleName)
         inParaStyle    = propertyIsInStyle('ParagraphStyles', portionUno.ParaStyleName)

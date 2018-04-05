@@ -24,13 +24,33 @@ class WikiTextPortionDecorator:
             'CharUnderlineColor'
         ]
 
-    def __init__(self, text):
-        self._originalText = text
+    def __init__(self, portionUno, userStylesMapper):
+        self._portionUno = portionUno
+        self._originalText = self._replaceNonBreakingChars(self._portionUno.getString())
         self._cssStyles = {}
-        self._result = text
+        self._result_without_css = self._originalText
+        self._userStylesMapper = userStylesMapper
+        self._wikiStyle = self._userStylesMapper.getMappedStyle(self._portionUno.CharStyleName)
 
     def __str__(self):
-        return self.getResult()
+        return self.getContent()
+
+    @classmethod
+    def _replaceNonBreakingChars(cls, text: str) -> str:
+        """
+        Replace non-breaking space and dash with html entities for better readability of wiki-pages sources and safe
+        copy-pasting to editors without proper Unicode support
+
+        :param str text:
+        :return: modified text
+        """
+
+        # full list of non-breaking (glue) chars: http://unicode.org/reports/tr14/#GL
+
+        return text.translate({
+            0x00A0: '&nbsp;',   # non-breaking space
+            0x2011: '&#x2011;'  # non-breaking dash
+        })
 
     def _addCssStyle(self, name, value, appendIfExist=False):
         if name in self._cssStyles:
@@ -40,17 +60,12 @@ class WikiTextPortionDecorator:
                 print('WARN: change `{}` value from {} to {}'.format(name, self._cssStyles[name], value))
         self._cssStyles[name] = value
 
-    def _surroundWithTag(self, tag, tagAttributes=''):
-        if tagAttributes:
-            tagAttributes = ' ' + tagAttributes
-        self._result = '<{0}{1}>{2}</{0}>'.format(tag, tagAttributes, self._result)
-
     def _surround(self, with_string):
-        self._result = with_string + self._result + with_string
+        self._result_without_css = with_string + self._result_without_css + with_string
 
     def addHyperLinkURL(self, targetUrl):
         targetUrl = targetUrl + ' ' if targetUrl != self._originalText else ''
-        self._result = '[' + targetUrl + self._originalText + ']'
+        self._result_without_css = '[' + targetUrl + self._originalText + ']'
 
     def handleCharPosture(self, posture):
         """italic etc"""
@@ -146,11 +161,14 @@ class WikiTextPortionDecorator:
             return
 
         if escapement > 0:
-            self._surroundWithTag('sup')
+            self._result_without_css = surroundWithTag(self._result_without_css, 'sup')
         else:
-            self._surroundWithTag('sub')
+            self._result_without_css = surroundWithTag(self._result_without_css, 'sub')
 
-    def getResult(self):
+    def getStyle(self):
+        return self._wikiStyle
+
+    def getContent(self):
         if len(self._cssStyles):
             style = ''
 
@@ -158,9 +176,11 @@ class WikiTextPortionDecorator:
             for name, value in sorted(self._cssStyles.items()):
                 style += name + ':' + value + ';'
             style = style[:-1]  # remove last semicolon
-            self._surroundWithTag('span', 'style="%s"' % style)
+            result = surroundWithTag(self._result_without_css, 'span', 'style="%s"' % style)
 
             # FIXME workaround for <span> styles inside wiki templates (we get them from paragraph's styles)
-            self._result = '{{#tag:span|' + self._result + '}}'
+            result = '{{#tag:span|' + result + '}}'
+        else:
+            result = self._result_without_css
 
-        return self._result
+        return result
