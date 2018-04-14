@@ -63,9 +63,8 @@ class UserStylesMapper:
             for line in f.readlines():
                 self._handleLine(line)
 
-    def getParagraphMappedStyle(self, paragraphUNO):
-        styleName = paragraphUNO.ParaStyleName
-        if styleName == 'Standard':
+    def getMappedStyle(self, styleName):
+        if styleName in ['Standard', '']:
             return None
 
         self._stylesUsageCount[styleName] += 1

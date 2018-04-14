@@ -30,9 +30,15 @@ def flushLogger():
         if not handler:
             continue
 
+        print('flushing log handler:', handler)
+        handler.acquire()
         try:
-            print('flushing log handler:', handler)
-            handler.acquire()
             handler.flush()
         finally:
             handler.release()
+
+
+def surroundWithTag(content, tag, tagAttributes=''):
+    if tagAttributes:
+        tagAttributes = ' ' + tagAttributes
+    return '<{0}{1}>{2}</{0}>'.format(tag, tagAttributes, content)

@@ -7,6 +7,8 @@
 import uno
 from abc import ABCMeta, abstractclassmethod, abstractmethod
 
+from convert.WikiTextPortionDecorator import WikiTextPortionDecorator
+from convert.WikiParagraphDecorator import WikiParagraphDecorator
 from writer2wiki.OfficeUi import OfficeUi
 from writer2wiki.w2w_office.lo_enums import \
     CaseMap, FontSlant, TextPortionType, FontStrikeout, FontWeight, FontUnderline
@@ -19,23 +21,20 @@ import writer2wiki.debug_utils as dbg
 class BaseConverter(metaclass=ABCMeta):
 
     @classmethod
-    @abstractclassmethod
-    def makeTextPortionDecorator(cls, text): pass
+    @abstractmethod
+    def makeTextPortionDecorator(cls, portionUno, userStylesMapper) -> WikiTextPortionDecorator : pass
 
     @classmethod
-    @abstractclassmethod
-    def makeParagraphDecorator(cls, paragraphUNO, userStylesMap): pass
+    @abstractmethod
+    def makeParagraphDecorator(cls, paragraphUNO, userStylesMap) -> WikiParagraphDecorator: pass
 
     @classmethod
-    @abstractclassmethod
-    def getFileExtension(cls):
-        # type: () -> str
-        pass
+    @abstractmethod
+    def getFileExtension(cls) -> str: pass
 
     @classmethod
-    @abstractclassmethod
-    def replaceNonBreakingChars(cls, text):
-        # type: (str) -> str
+    @abstractmethod
+    def replaceNonBreakingChars(cls, text: str) -> str:
         """
         Replace non-breaking space and dash with html entities for better readability of wiki-pages sources and safe
         copy-pasting to editors without proper Unicode support
@@ -45,13 +44,11 @@ class BaseConverter(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def addParagraph(self, paragraphDecorator):
-        # type: () -> None
+    def addParagraph(self, paragraphDecorator: WikiParagraphDecorator) -> None:
         pass
 
     @abstractmethod
-    def getResult(self):
-        # type: () -> str
+    def getResult(self) -> str:
         pass
 
     def __init__(self, context):
@@ -62,7 +59,7 @@ class BaseConverter(metaclass=ABCMeta):
         self._ui = OfficeUi(context)
         self._hasFootnotes = False
 
-    def checkCanConvert(self):
+    def checkCanConvert(self) -> bool:
         if not Service.objectSupports(self._document, Service.TEXT_DOCUMENT):
             # TODO more specific message: either no document is opened at all or we can't convert, for example, Calc
             self._ui.messageBox(ui_text.noWriterDocumentOpened())
@@ -82,7 +79,6 @@ class BaseConverter(metaclass=ABCMeta):
         self._convertXTextObject(textModel, userStylesMapper)
 
         dbg.printCentered('done')
-        print('result:\n' + self.getResult())
 
         targetFile = docPath.with_suffix(self.getFileExtension())
         if targetFile.exists():
@@ -104,18 +100,20 @@ class BaseConverter(metaclass=ABCMeta):
 
     def _convertXTextObject(self, textUno, userStylesMapper):
         from writer2wiki.util import iterUnoCollection
-        for paragraph in iterUnoCollection(textUno):
+
+        for index, paragraph in enumerate(iterUnoCollection(textUno)):
+            if (index + 1) % 5 == 0:
+                print('iter #', index + 1, 'out of', self._document.ParagraphCount)
             if Service.objectSupports(paragraph, Service.TEXT_TABLE):
                 print('skip text table')
                 continue
 
-            dbg.printCentered('para iter')
             paragraphDecorator = self.makeParagraphDecorator(paragraph, userStylesMapper)
 
             for portion in iterUnoCollection(paragraph):
                 portionType = portion.TextPortionType
                 if portionType == TextPortionType.TEXT:
-                    portionDecorator = self._buildTextPortionTypeText(portion)
+                    portionDecorator = self._buildTextPortionTypeText(portion, userStylesMapper)
                     if portionDecorator is not None:
                         paragraphDecorator.addPortion(portionDecorator)
 
@@ -136,43 +134,78 @@ class BaseConverter(metaclass=ABCMeta):
 
             self.addParagraph(paragraphDecorator)
 
-    def _buildTextPortionTypeText(self, portionUno):
+    def _buildTextPortionTypeText(self, portionUno, userStylesMapper):
         text = self.replaceNonBreakingChars(portionUno.getString())
         if not text:  # blank line
             return None
 
-        portionDecorator = self.makeTextPortionDecorator(text)
+        PROPERTIES_VISIBLE_ON_WHITESPACE = [
+            'HyperLinkURL'
+            'CharStrikeout',
+            'CharUnderline',
+            'CharUnderlineColor'
+        ]
 
-        link = portionUno.HyperLinkURL
-        if link:  # link should go first for proper wiki markup
-            portionDecorator.addHyperLink(link)
+        portionDecorator = self.makeTextPortionDecorator(portionUno, userStylesMapper)
 
-        if not text.isspace():
-            if portionUno.CharPosture != FontSlant.NONE:  # italic
-                portionDecorator.addPosture(portionUno.CharPosture)
+        # link must go first for proper wiki markup
+        if portionUno.HyperLinkURL:
+            # FIXME merge: check no extra underline and color for hyperlinks
+            portionDecorator.addHyperLinkURL(portionUno.HyperLinkURL)
 
-            if portionUno.CharWeight != FontWeight.NORMAL and not link:  # bold
-                # FIX CONVERT: handle non-bold links (possible in Office)
-                portionDecorator.addWeight(portionUno.CharWeight)
+        handledProperties = portionDecorator.getSupportedUnoProperties()
+        for unoPropName in handledProperties:
+            if text.isspace() and unoPropName not in PROPERTIES_VISIBLE_ON_WHITESPACE:
+                continue
 
-            if portionUno.CharCaseMap != CaseMap.NONE:
-                portionDecorator.addCaseMap(portionUno.CharCaseMap)
+            propValue = getattr(portionUno, unoPropName, None)
+            if propValue is None:
+                print('ERR: portion UNO has no property `{}`'.format(unoPropName))
+                continue
+            if self._propertyIsInStyleOrIsDefault(portionUno, unoPropName):
+                continue
 
-            if portionUno.CharColor != -1 and not link:
-                # FIX CONVERT: handle custom-colored links (possible in Office)
-                portionDecorator.addFontColor(portionUno.CharColor)
+            method = getattr(portionDecorator, 'handle' + unoPropName, None)
+            if method is None:
+                print('ERR: `{}` has no handler method for property `{}`'
+                      .format(portionDecorator.__class__, unoPropName))
+                continue
 
-            if portionUno.CharEscapement < 0:
-                portionDecorator.addSubScript()
-            if portionUno.CharEscapement > 0:
-                portionDecorator.addSuperScript()
-
-        if portionUno.CharStrikeout != FontStrikeout.NONE:
-            portionDecorator.addStrikeout(portionUno.CharStrikeout)
-
-        if portionUno.CharUnderline not in [FontUnderline.NONE, FontUnderline.DONTKNOW] and not link:
-            # FIX CONVERT: handle links without underlines (possible in Office)
-            underlineColor = portionUno.CharUnderlineColor if portionUno.CharUnderlineHasColor else None
-            portionDecorator.addUnderLine(portionUno.CharUnderline, underlineColor)
+            method(propValue)
 
         return portionDecorator
+
+    def _propertyIsInStyleOrIsDefault(self, portionUno, unoPropName):
+        # styles docs: https://wiki.openoffice.org/wiki/Documentation/DevGuide/Text/Overall_Document_Features
+
+        def propertyIsInStyle(styleFamilyName, styleName):
+            nonlocal portionUno, unoPropName
+
+            if styleName == '':  # no para or char style for property
+                # print('style `{:<18}` is not set'.format(styleFamilyName))
+                return False
+
+            portionPropValue = getattr(portionUno, unoPropName)
+
+            # TODO perf: check if we should cache this (functools.memoize ?)
+            familyStyles = self._document.getStyleFamilies().getByName(styleFamilyName)
+            style = familyStyles.getByName(styleName)
+            stylePropValue = getattr(style, unoPropName)
+
+            # print('style `{:<18}`, prop {:<14} | portionVal: {}, styleVal: {} | equals: {}'.
+            #       format(styleName, unoPropName, portionPropValue, stylePropValue, stylePropValue == portionPropValue))
+
+            return stylePropValue == portionPropValue
+
+        # FIXME merge: check if 'Default Style' has same name in Russian locale (should be 'Standard' ?)
+        inDefaultStyle = propertyIsInStyle('CharacterStyles', 'Default Style')
+        inPortionStyle = propertyIsInStyle('CharacterStyles', portionUno.CharStyleName)
+        inParaStyle    = propertyIsInStyle('ParagraphStyles', portionUno.ParaStyleName)
+
+        if not inDefaultStyle and inPortionStyle:
+            return True
+
+        if portionUno.ParaStyleName != '':
+            return inParaStyle
+
+        return inDefaultStyle  # in the end check default style

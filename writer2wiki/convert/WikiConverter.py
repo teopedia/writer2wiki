@@ -18,8 +18,8 @@ class WikiConverter(BaseConverter):
         self._paragraphs = []  # type: List[WikiParagraphDecorator]
 
     @classmethod
-    def makeTextPortionDecorator(cls, text):
-        return WikiTextPortionDecorator(text)
+    def makeTextPortionDecorator(cls, portionUno, userStylesMapper):
+        return WikiTextPortionDecorator(portionUno, userStylesMapper)
 
     @classmethod
     def makeParagraphDecorator(cls, paragraphUNO, userStylesMap):
@@ -64,8 +64,6 @@ class WikiConverter(BaseConverter):
 
         self._paragraphs.append(paragraphDecorator)
 
-        print('>> para add:', paragraphDecorator)
-
     def getResult(self):
         if len(self._paragraphs) == 0:
             return ''
@@ -75,9 +73,11 @@ class WikiConverter(BaseConverter):
         sameStyleBuffer = ''
 
         def flushBuffer():
+            from convert.wiki_util import getStyledContent
             nonlocal sameStyleBuffer, result
+
             sameStyleBuffer = sameStyleBuffer[: -2]  # remove last para separator before wrapping in style
-            result += WikiParagraphDecorator.getStyledContent(currentStyle, sameStyleBuffer) + '\n\n'
+            result += getStyledContent(currentStyle, sameStyleBuffer) + '\n\n'
             sameStyleBuffer = ''
 
         for p in self._paragraphs:
