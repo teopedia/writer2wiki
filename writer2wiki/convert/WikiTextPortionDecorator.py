@@ -25,12 +25,10 @@ class WikiTextPortionDecorator:
         ]
 
     def __init__(self, portionUno, userStylesMapper):
-        self._portionUno = portionUno
-        self._originalText = self._replaceNonBreakingChars(self._portionUno.getString())
+        self._originalText = self._replaceNonBreakingChars(portionUno.getString())
         self._cssStyles = {}
         self._result_without_css = self._originalText
-        self._userStylesMapper = userStylesMapper
-        self._wikiStyle = self._userStylesMapper.getMappedStyle(self._portionUno.CharStyleName)
+        self._wikiStyle = userStylesMapper.getMappedStyle(portionUno.CharStyleName)
 
     def __str__(self):
         return self.getContent()
