@@ -58,8 +58,17 @@ class Paragraph:
             self._portions.append(portion)
 
     def appendFootnote(self, caption, content):
+        # FIXME convert: this implementation is wiki-specific
+        # To make it format agnostic, one solution would be to create subclass for footnote portions:
+        #   1. char properties and raw text are taken from caption
+        #   2. content is completely converted to text and assigned in BaseConverter (as is now already)
+        #   3. this portion is appended to the `_portions` as usual portion
+        #   4. if styles of caption and the last portion are the same, merge them by ??"promoting"
+        #      the last portion to footnote portion??
+        #
+        # This will also allow to handle footnotes at the beginning of paragraph
+
         if self.isEmpty():
-            # FIXME convert: handle this case; caption should be TextPortion to account for styles
             print("NOT IMPLEMENTED: can't handle footnote at the start of paragraph")
             return
 

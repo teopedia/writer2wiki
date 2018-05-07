@@ -19,27 +19,27 @@ class BaseTextPortionDecorator(metaclass=ABCMeta):
     @abstractmethod
     def _replaceNonBreakingChars(cls, text: str) -> str: pass
 
-    # @abstractmethod
-    # def afterPropertyHandlersApplied(self) -> None: pass
-
     @abstractmethod
-    def getDecoratedText(self, textPortion: TextPortion): pass
+    def _afterPropertiesApplied(self) -> None: pass
 
     def __init__(self):
         self._originalText = ''
         self._result = ''
 
-    def _initFromPortion(self, textPortion: TextPortion):
-        self._originalText = self._replaceNonBreakingChars(textPortion.getRawText())
-        self._result = self._originalText
+    def getDecoratedText(self, textPortion: TextPortion):
+        self._originalText = textPortion.getRawText()
+        self._result = self._replaceNonBreakingChars(self._originalText)
 
-        # apply decorator's methods for char properties, they all must start with 'handle', e.g. handleCharWeight(...)
+        # call decorator's methods to apply char properties to raw text, all method names
+        # must start with 'apply', e.g. applyCharWeight(...)
         for unoPropName, propValue in textPortion.getProperties().items():
-            method = getattr(self, 'handle' + unoPropName, None)
+            method = getattr(self, 'apply' + unoPropName, None)
             if method is None:
                 print('ERR: `{}` has no handler method for property `{}`'.format(self.__class__, unoPropName))
                 continue
 
             method(propValue)
 
-        return self
+        self._afterPropertiesApplied()
+
+        return self._result

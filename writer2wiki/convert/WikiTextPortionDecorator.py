@@ -62,17 +62,17 @@ class WikiTextPortionDecorator(BaseTextPortionDecorator):
     def _surround(self, with_string):
         self._result = with_string + self._result + with_string
 
-    def handleHyperLinkURL(self, targetUrl):
+    def applyHyperLinkURL(self, targetUrl):
         targetUrl = targetUrl + ' ' if targetUrl != self._originalText else ''
         self._result = '[' + targetUrl + self._result + ']'
 
-    def handleCharPosture(self, posture):
+    def applyCharPosture(self, posture):
         """italic etc"""
         if posture != FontSlant.ITALIC:
             print('unexpected posture:', posture)
         self._surround("''")
 
-    def handleCharWeight(self, weight):
+    def applyCharWeight(self, weight):
         if weight < FontWeight.NORMAL:
             print('thin weights are not supported, got:', weight)
             return
@@ -101,7 +101,7 @@ class WikiTextPortionDecorator(BaseTextPortionDecorator):
         if mappedStyle != CssTextDecorationStyle.SOLID:  # solid is default
             self._addCssStyle('text-decoration-style', mappedStyle)
 
-    def handleCharStrikeout(self, strikeoutKind):
+    def applyCharStrikeout(self, strikeoutKind):
         STYLES = {FontStrikeout.NONE:   None,
                   FontStrikeout.SINGLE: CssTextDecorationStyle.SOLID,
                   FontStrikeout.DOUBLE: CssTextDecorationStyle.DOUBLE,
@@ -111,7 +111,7 @@ class WikiTextPortionDecorator(BaseTextPortionDecorator):
                   }
         self._addTextDecorationStyle('line-through', strikeoutKind, STYLES)
 
-    def handleCharUnderline(self, underlineKind):
+    def applyCharUnderline(self, underlineKind):
         STYLES = {FontUnderline.NONE:           None,
                   FontUnderline.SINGLE:         CssTextDecorationStyle.SOLID,
                   FontUnderline.DOUBLE:         CssTextDecorationStyle.DOUBLE,
@@ -133,13 +133,13 @@ class WikiTextPortionDecorator(BaseTextPortionDecorator):
                   }
         self._addTextDecorationStyle('underline', underlineKind, STYLES)
 
-    def handleCharUnderlineColor(self, color):
+    def applyCharUnderlineColor(self, color):
         if color == -1:
             print('WARN: tried to handle underline color == -1')
             return
         self._addCssStyle('text-decoration-color', intToHtmlHex(color))
 
-    def handleCharCaseMap(self, caseMapKind):
+    def applyCharCaseMap(self, caseMapKind):
         STYLES = {CaseMap.UPPERCASE: ['text-transform', 'uppercase'],
                   CaseMap.LOWERCASE: ['text-transform', 'lowercase'],
                   CaseMap.TITLE:     ['text-transform', 'capitalize'],
@@ -151,10 +151,10 @@ class WikiTextPortionDecorator(BaseTextPortionDecorator):
         style = STYLES[caseMapKind]
         self._addCssStyle(style[0], style[1])
 
-    def handleCharColor(self, color):
+    def applyCharColor(self, color):
         self._addCssStyle('color', intToHtmlHex(color))
 
-    def handleCharEscapement(self, escapement):
+    def applyCharEscapement(self, escapement):
         if escapement == 0:
             print('BUG: invoked handleCharEscapement with 0 escapement')
             return
@@ -164,11 +164,9 @@ class WikiTextPortionDecorator(BaseTextPortionDecorator):
         else:
             self._result = surroundWithTag(self._result, 'sub')
 
-    def getDecoratedText(self, textPortion: TextPortion):
-        self._initFromPortion(textPortion)
-
+    def _afterPropertiesApplied(self):
         if len(self._cssStyles) == 0:
-            return self._result
+            return
 
         style = ''
 
@@ -178,7 +176,6 @@ class WikiTextPortionDecorator(BaseTextPortionDecorator):
         style = style[:-1]  # remove last semicolon
         self._result = surroundWithTag(self._result, 'span', 'style="%s"' % style)
 
-        # FIXME workaround for <span> styles inside wiki templates (we get templates from paragraph's styles)
+        # workaround for wikitext limitation: <span> tag not rendered inside wiki {{templates}}
+        # (we get templates from paragraph's named styles)
         self._result = '{{#tag:span|' + self._result + '}}'
-
-        return self._result

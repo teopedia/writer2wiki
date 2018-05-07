@@ -107,15 +107,16 @@ class BaseConverter(metaclass=ABCMeta):
 
             paragraphDecorator = self.makeParagraphDecorator(paragraphUno, userStylesMapper)
             portionsList = Paragraph(paragraphUno, userStylesMapper)
-            portionDecorator = paragraphDecorator.makeTextPortionDecorator()
+            supportedProperties = paragraphDecorator.makeTextPortionDecorator().getSupportedUnoProperties()
 
             for portionUno in iterUnoCollection(paragraphUno):
                 portionType = portionUno.TextPortionType
                 if portionType == TextPortionType.TEXT:
+
                     portion = TextPortion(portionUno,
                                           self._document.getStyleFamilies(),
                                           userStylesMapper,
-                                          portionDecorator.getSupportedUnoProperties()
+                                          supportedProperties
                                           )
                     if not portion.isEmpty():
                         paragraphDecorator.addPortion(portion)
