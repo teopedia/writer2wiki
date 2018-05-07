@@ -18,10 +18,6 @@ class WikiConverter(BaseConverter):
         self._paragraphs = []  # type: List[WikiParagraphDecorator]
 
     @classmethod
-    def makeTextPortionDecorator(cls, portionUno, userStylesMapper):
-        return WikiTextPortionDecorator(portionUno, userStylesMapper)
-
-    @classmethod
     def makeParagraphDecorator(cls, paragraphUNO, userStylesMap):
         """
         :param paragraphUNO:
@@ -47,8 +43,9 @@ class WikiConverter(BaseConverter):
         # full list of non-breaking (glue) chars: http://unicode.org/reports/tr14/#GL
 
         return text.translate({
-            0x00A0: '&nbsp;',   # non-breaking space
-            0x2011: '&#x2011;'  # non-breaking dash
+            0x00A0: '&nbsp;',       # non-breaking space
+            0x2011: '&#x2011;',     # non-breaking dash
+            '*'   : '<nowiki>*</nowiki>'  # fixme: doesn't work, see https://webapps.stackexchange.com/q/23463/185067
         })
 
     def addParagraph(self, paragraphDecorator):

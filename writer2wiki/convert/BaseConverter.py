@@ -5,13 +5,13 @@
 
 
 import uno
-from abc import ABCMeta, abstractclassmethod, abstractmethod
+from abc import ABCMeta, abstractmethod
 
-from convert.WikiTextPortionDecorator import WikiTextPortionDecorator
+from convert.Paragraph import Paragraph
+from convert.TextPortion import TextPortion
 from convert.WikiParagraphDecorator import WikiParagraphDecorator
 from writer2wiki.OfficeUi import OfficeUi
-from writer2wiki.w2w_office.lo_enums import \
-    CaseMap, FontSlant, TextPortionType, FontStrikeout, FontWeight, FontUnderline
+from writer2wiki.w2w_office.lo_enums import TextPortionType
 from writer2wiki.w2w_office.service import Service
 from writer2wiki.convert.UserStylesMapper import UserStylesMapper
 from writer2wiki.util import *
@@ -19,10 +19,6 @@ from writer2wiki import ui_text
 import writer2wiki.debug_utils as dbg
 
 class BaseConverter(metaclass=ABCMeta):
-
-    @classmethod
-    @abstractmethod
-    def makeTextPortionDecorator(cls, portionUno, userStylesMapper) -> WikiTextPortionDecorator : pass
 
     @classmethod
     @abstractmethod
@@ -79,6 +75,7 @@ class BaseConverter(metaclass=ABCMeta):
         self._convertXTextObject(textModel, userStylesMapper)
 
         dbg.printCentered('done')
+        print('result:\n', self.getResult())
 
         targetFile = docPath.with_suffix(self.getFileExtension())
         if targetFile.exists():
@@ -101,111 +98,43 @@ class BaseConverter(metaclass=ABCMeta):
     def _convertXTextObject(self, textUno, userStylesMapper):
         from writer2wiki.util import iterUnoCollection
 
-        for index, paragraph in enumerate(iterUnoCollection(textUno)):
+        for index, paragraphUno in enumerate(iterUnoCollection(textUno)):
             if (index + 1) % 5 == 0:
                 print('iter #', index + 1, 'out of', self._document.ParagraphCount)
-            if Service.objectSupports(paragraph, Service.TEXT_TABLE):
+            if Service.objectSupports(paragraphUno, Service.TEXT_TABLE):
                 print('skip text table')
                 continue
 
-            paragraphDecorator = self.makeParagraphDecorator(paragraph, userStylesMapper)
+            paragraphDecorator = self.makeParagraphDecorator(paragraphUno, userStylesMapper)
+            portionsList = Paragraph(paragraphUno, userStylesMapper)
+            portionDecorator = paragraphDecorator.makeTextPortionDecorator()
 
-            for portion in iterUnoCollection(paragraph):
-                portionType = portion.TextPortionType
+            for portionUno in iterUnoCollection(paragraphUno):
+                portionType = portionUno.TextPortionType
                 if portionType == TextPortionType.TEXT:
-                    portionDecorator = self._buildTextPortionTypeText(portion, userStylesMapper)
-                    if portionDecorator is not None:
-                        paragraphDecorator.addPortion(portionDecorator)
+                    portion = TextPortion(portionUno,
+                                          self._document.getStyleFamilies(),
+                                          userStylesMapper,
+                                          portionDecorator.getSupportedUnoProperties()
+                                          )
+                    if not portion.isEmpty():
+                        paragraphDecorator.addPortion(portion)
+                        # portionsList.appendPortion(portion)
 
                 elif portionType == TextPortionType.FOOTNOTE:
                     # TODO convert: recognize endnotes - it has same portion type
                     self._hasFootnotes = True
-                    caption = portion.getString()
+                    caption = portionUno.getString()
 
                     # FIXME design: we don't need `context` here, this means the method should be in separate class -
                     #               XTextObjectConverter or something like that
                     footConverter = self.__class__(self._context)
-                    footConverter._convertXTextObject(portion.Footnote, userStylesMapper)
+                    footConverter._convertXTextObject(portionUno.Footnote, userStylesMapper)
                     paragraphDecorator.addFootnote(caption, footConverter.getResult())
+                    # portionsList.appendFootnote(caption, footConverter.getResult())
 
                 else:
                     print('skip portion with not supported type: ' + portionType)
                     continue
 
             self.addParagraph(paragraphDecorator)
-
-    def _buildTextPortionTypeText(self, portionUno, userStylesMapper):
-        text = self.replaceNonBreakingChars(portionUno.getString())
-        if not text:  # blank line
-            return None
-
-        PROPERTIES_VISIBLE_ON_WHITESPACE = [
-            'HyperLinkURL'
-            'CharStrikeout',
-            'CharUnderline',
-            'CharUnderlineColor'
-        ]
-
-        portionDecorator = self.makeTextPortionDecorator(portionUno, userStylesMapper)
-
-        # link must go first for proper wiki markup
-        if portionUno.HyperLinkURL:
-            # FIXME merge: check no extra underline and color for hyperlinks
-            portionDecorator.addHyperLinkURL(portionUno.HyperLinkURL)
-
-        handledProperties = portionDecorator.getSupportedUnoProperties()
-        for unoPropName in handledProperties:
-            if text.isspace() and unoPropName not in PROPERTIES_VISIBLE_ON_WHITESPACE:
-                continue
-
-            propValue = getattr(portionUno, unoPropName, None)
-            if propValue is None:
-                print('ERR: portion UNO has no property `{}`'.format(unoPropName))
-                continue
-            if self._propertyIsInStyleOrIsDefault(portionUno, unoPropName):
-                continue
-
-            method = getattr(portionDecorator, 'handle' + unoPropName, None)
-            if method is None:
-                print('ERR: `{}` has no handler method for property `{}`'
-                      .format(portionDecorator.__class__, unoPropName))
-                continue
-
-            method(propValue)
-
-        return portionDecorator
-
-    def _propertyIsInStyleOrIsDefault(self, portionUno, unoPropName):
-        # styles docs: https://wiki.openoffice.org/wiki/Documentation/DevGuide/Text/Overall_Document_Features
-
-        def propertyIsInStyle(styleFamilyName, styleName):
-            nonlocal portionUno, unoPropName
-
-            if styleName == '':  # no para or char style for property
-                # print('style `{:<18}` is not set'.format(styleFamilyName))
-                return False
-
-            portionPropValue = getattr(portionUno, unoPropName)
-
-            # TODO perf: check if we should cache this (functools.memoize ?)
-            familyStyles = self._document.getStyleFamilies().getByName(styleFamilyName)
-            style = familyStyles.getByName(styleName)
-            stylePropValue = getattr(style, unoPropName)
-
-            # print('style `{:<18}`, prop {:<14} | portionVal: {}, styleVal: {} | equals: {}'.
-            #       format(styleName, unoPropName, portionPropValue, stylePropValue, stylePropValue == portionPropValue))
-
-            return stylePropValue == portionPropValue
-
-        # FIXME merge: check if 'Default Style' has same name in Russian locale (should be 'Standard' ?)
-        inDefaultStyle = propertyIsInStyle('CharacterStyles', 'Default Style')
-        inPortionStyle = propertyIsInStyle('CharacterStyles', portionUno.CharStyleName)
-        inParaStyle    = propertyIsInStyle('ParagraphStyles', portionUno.ParaStyleName)
-
-        if not inDefaultStyle and inPortionStyle:
-            return True
-
-        if portionUno.ParaStyleName != '':
-            return inParaStyle
-
-        return inDefaultStyle  # in the end check default style

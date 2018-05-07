@@ -4,12 +4,21 @@
 #           http://www.boost.org/LICENSE_1_0.txt)
 
 
-from writer2wiki.convert.css_enums import CssTextDecorationStyle
-from writer2wiki.w2w_office.lo_enums import *
-from writer2wiki.util import *
+from convert.BaseTextPortionDecorator import BaseTextPortionDecorator
+from convert.TextPortion import TextPortion
+from convert.css_enums import CssTextDecorationStyle
+from w2w_office.lo_enums import *
+from util import *
 
 
-class WikiTextPortionDecorator:
+class WikiTextPortionDecorator(BaseTextPortionDecorator):
+
+    def __init__(self):
+        super().__init__()
+        self._cssStyles = {}
+
+    def __str__(self):
+        return self.getDecoratedText()
 
     @classmethod
     def getSupportedUnoProperties(cls):
@@ -23,15 +32,6 @@ class WikiTextPortionDecorator:
             'CharUnderline',
             'CharUnderlineColor'
         ]
-
-    def __init__(self, portionUno, userStylesMapper):
-        self._originalText = self._replaceNonBreakingChars(portionUno.getString())
-        self._cssStyles = {}
-        self._result_without_css = self._originalText
-        self._wikiStyle = userStylesMapper.getMappedStyle(portionUno.CharStyleName)
-
-    def __str__(self):
-        return self.getContent()
 
     @classmethod
     def _replaceNonBreakingChars(cls, text: str) -> str:
@@ -54,16 +54,17 @@ class WikiTextPortionDecorator:
         if name in self._cssStyles:
             if appendIfExist:
                 self._cssStyles[name] = self._cssStyles[name] + ' ' + value
+            # elif self._cssStyles[name] != value:
             else:
                 print('WARN: change `{}` value from {} to {}'.format(name, self._cssStyles[name], value))
         self._cssStyles[name] = value
 
     def _surround(self, with_string):
-        self._result_without_css = with_string + self._result_without_css + with_string
+        self._result = with_string + self._result + with_string
 
-    def addHyperLinkURL(self, targetUrl):
+    def handleHyperLinkURL(self, targetUrl):
         targetUrl = targetUrl + ' ' if targetUrl != self._originalText else ''
-        self._result_without_css = '[' + targetUrl + self._originalText + ']'
+        self._result = '[' + targetUrl + self._result + ']'
 
     def handleCharPosture(self, posture):
         """italic etc"""
@@ -159,26 +160,25 @@ class WikiTextPortionDecorator:
             return
 
         if escapement > 0:
-            self._result_without_css = surroundWithTag(self._result_without_css, 'sup')
+            self._result = surroundWithTag(self._result, 'sup')
         else:
-            self._result_without_css = surroundWithTag(self._result_without_css, 'sub')
+            self._result = surroundWithTag(self._result, 'sub')
 
-    def getStyle(self):
-        return self._wikiStyle
+    def getDecoratedText(self, textPortion: TextPortion):
+        self._initFromPortion(textPortion)
 
-    def getContent(self):
-        if len(self._cssStyles):
-            style = ''
+        if len(self._cssStyles) == 0:
+            return self._result
 
-            # TODO PY: replace with `str.join()`
-            for name, value in sorted(self._cssStyles.items()):
-                style += name + ':' + value + ';'
-            style = style[:-1]  # remove last semicolon
-            result = surroundWithTag(self._result_without_css, 'span', 'style="%s"' % style)
+        style = ''
 
-            # FIXME workaround for <span> styles inside wiki templates (we get them from paragraph's styles)
-            result = '{{#tag:span|' + result + '}}'
-        else:
-            result = self._result_without_css
+        # TODO PY: replace with something like `str.join()`
+        for name, value in sorted(self._cssStyles.items()):
+            style += name + ':' + value + ';'
+        style = style[:-1]  # remove last semicolon
+        self._result = surroundWithTag(self._result, 'span', 'style="%s"' % style)
 
-        return result
+        # FIXME workaround for <span> styles inside wiki templates (we get templates from paragraph's styles)
+        self._result = '{{#tag:span|' + self._result + '}}'
+
+        return self._result

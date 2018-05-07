@@ -2,11 +2,14 @@
 #  Distributed under the Boost Software License, Version 1.0.
 #     (See accompanying file ../LICENSE.txt or copy at
 #           http://www.boost.org/LICENSE_1_0.txt)
+
+
 from typing import List
 
+from convert.TextPortion import TextPortion
 from convert.UserStylesMapper import UserStylesMapper
 from convert.wiki_util import getStyledContent
-from writer2wiki.convert.WikiTextPortionDecorator import WikiTextPortionDecorator
+from convert.WikiTextPortionDecorator import WikiTextPortionDecorator
 
 
 class WikiParagraphDecorator:
@@ -15,17 +18,33 @@ class WikiParagraphDecorator:
         self._paragraphUNO = paragraphUNO
         self._userStylesMapper = userStylesMapper
         self._wikiStyle = self._userStylesMapper.getMappedStyle(self._paragraphUNO.ParaStyleName)
-        self._portions = []  # type: List[WikiTextPortionDecorator]
+        self._portions = []  # type: List[TextPortion]
 
     def __str__(self):
         return getStyledContent(self.getStyle(), self.getContent())
 
-    def addPortion(self, portion: WikiTextPortionDecorator) -> None:
-        self._portions.append(portion)
+    @classmethod
+    def makeTextPortionDecorator(cls):
+        return WikiTextPortionDecorator()
+
+    def _noPortions(self):
+        return len(self._portions) == 0
+
+    def addPortion(self, portion: TextPortion) -> None:
+        print('adding portion:', portion)
+        if not self._noPortions() and self._portions[-1].hasSameProperties(portion):
+            print('merge `{}` with `{}`'.format(self._portions[-1].getRawText(), portion.getRawText()))
+            self._portions[-1].appendRawText(portion.getRawText())
+        else:
+            self._portions.append(portion)
 
     def addFootnote(self, caption, content: str):
-        from convert.PseudoPortionUno import PseudoPortionUno
-        self._portions.append(PseudoPortionUno("<ref>{}</ref>".format(content.strip())))
+        if self._noPortions():
+            # FIXME convert: handle this case; caption should be TextPortion to account for styles
+            print("NOT IMPLEMENTED: can't handle footnote at the start of paragraph")
+            return
+
+        self._portions[-1].appendRawText("<ref>{}</ref>".format(content.strip()))
 
     def isEmpty(self):
         return len(self.getContent()) == 0
@@ -62,18 +81,18 @@ class WikiParagraphDecorator:
         if len(self._portions) == 0:
             return ''
 
+        portionDecorator = self.makeTextPortionDecorator()
         result = ''
-        currentStyle = self._portions[0].getStyle()
+        currentStyle = self._portions[0].getStyleName()
         sameStyleBuffer = ''
 
         for p in self._portions:
-            if p.getStyle() != currentStyle \
-                    and isinstance(p, WikiTextPortionDecorator):  # it's not footnote's pseudo UNO
+            if p.getStyleName() != currentStyle:
                 result += getStyledContent(currentStyle, sameStyleBuffer)
                 sameStyleBuffer = ''
-                currentStyle = p.getStyle()
+                currentStyle = p.getStyleName()
 
-            sameStyleBuffer += p.getContent()
+            sameStyleBuffer += portionDecorator.getDecoratedText(p)
 
         # the last style in paragraph will not be flushed inside loop
         result += getStyledContent(currentStyle, sameStyleBuffer)
