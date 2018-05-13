@@ -7,7 +7,7 @@
 from collections import OrderedDict
 from typing import List
 
-from convert.UserStylesMapper import UserStylesMapper
+from writer2wiki.convert.UserStylesMapper import UserStylesMapper
 
 
 class TextPortion:
@@ -65,7 +65,8 @@ class TextPortion:
         # FIXME merge: check if 'Default Style' has same name in Russian locale (should be 'Standard' ?)
         #              (built-in styles have 1 internal universal name and localized names, not sure
         #               in which properties stored what)
-        inDefaultStyle = propertyIsInStyle('CharacterStyles', 'Default Style')
+        # inDefaultStyle = propertyIsInStyle('CharacterStyles', 'Default Style')
+        inDefaultStyle = propertyIsInStyle('CharacterStyles', 'Базовый')
         inPortionStyle = propertyIsInStyle('CharacterStyles', portionUno.CharStyleName)
         inParaStyle    = propertyIsInStyle('ParagraphStyles', portionUno.ParaStyleName)
 

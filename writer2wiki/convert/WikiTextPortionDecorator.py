@@ -4,11 +4,10 @@
 #           http://www.boost.org/LICENSE_1_0.txt)
 
 
-from convert.BaseTextPortionDecorator import BaseTextPortionDecorator
-from convert.TextPortion import TextPortion
-from convert.css_enums import CssTextDecorationStyle
-from w2w_office.lo_enums import *
-from util import *
+from writer2wiki.convert.BaseTextPortionDecorator import BaseTextPortionDecorator
+from writer2wiki.convert.css_enums import CssTextDecorationStyle
+from writer2wiki.w2w_office.lo_enums import *
+from writer2wiki.util import *
 
 
 class WikiTextPortionDecorator(BaseTextPortionDecorator):
@@ -16,9 +15,6 @@ class WikiTextPortionDecorator(BaseTextPortionDecorator):
     def __init__(self):
         super().__init__()
         self._cssStyles = {}
-
-    def __str__(self):
-        return self.getDecoratedText()
 
     @classmethod
     def getSupportedUnoProperties(cls):
@@ -46,8 +42,9 @@ class WikiTextPortionDecorator(BaseTextPortionDecorator):
         # full list of non-breaking (glue) chars: http://unicode.org/reports/tr14/#GL
 
         return text.translate({
-            0x00A0: '&nbsp;',   # non-breaking space
-            0x2011: '&#x2011;'  # non-breaking dash
+            0x00A0: '&nbsp;',       # non-breaking space
+            0x2011: '&#x2011;',     # non-breaking dash
+            '*'   : '<nowiki>*</nowiki>'  # fixme: doesn't work, see https://webapps.stackexchange.com/q/23463/185067
         })
 
     def _addCssStyle(self, name, value, appendIfExist=False):
@@ -112,6 +109,9 @@ class WikiTextPortionDecorator(BaseTextPortionDecorator):
         self._addTextDecorationStyle('line-through', strikeoutKind, STYLES)
 
     def applyCharUnderline(self, underlineKind):
+        if self._isLink:
+            return
+
         STYLES = {FontUnderline.NONE:           None,
                   FontUnderline.SINGLE:         CssTextDecorationStyle.SOLID,
                   FontUnderline.DOUBLE:         CssTextDecorationStyle.DOUBLE,
@@ -134,6 +134,9 @@ class WikiTextPortionDecorator(BaseTextPortionDecorator):
         self._addTextDecorationStyle('underline', underlineKind, STYLES)
 
     def applyCharUnderlineColor(self, color):
+        if self._isLink:
+            return
+
         if color == -1:
             print('WARN: tried to handle underline color == -1')
             return
@@ -152,6 +155,9 @@ class WikiTextPortionDecorator(BaseTextPortionDecorator):
         self._addCssStyle(style[0], style[1])
 
     def applyCharColor(self, color):
+        if self._isLink:
+            return
+
         self._addCssStyle('color', intToHtmlHex(color))
 
     def applyCharEscapement(self, escapement):

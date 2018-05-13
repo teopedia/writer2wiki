@@ -6,8 +6,8 @@
 
 from typing import List
 
-from convert.TextPortion import TextPortion
-from convert.UserStylesMapper import UserStylesMapper
+from writer2wiki.convert.TextPortion import TextPortion
+from writer2wiki.convert.UserStylesMapper import UserStylesMapper
 
 
 class Paragraph:
@@ -39,7 +39,11 @@ class Paragraph:
         self._namedStyle = userStylesMapper.getMappedStyle(paragraphUno.ParaStyleName)
         self._portions = []  # type: List[TextPortion]
 
+    def __str__(self) -> str:
+        return self.__class__.__name__ + "({})".format([str(p) for p in self._portions])
+
     def isEmpty(self):
+        # we don't append empty portions, hence no need to iterate them to check
         return len(self._portions) == 0
 
     def _last(self):  # FIXME apply after debug
@@ -52,13 +56,13 @@ class Paragraph:
             return
 
         if not self.isEmpty() and self._portions[-1].hasSameProperties(portion):
-            print('merge `{}` with `{}`'.format(self._portions[-1].getRawText(), portion.getRawText()))
+            # print('merge `{}` with `{}`'.format(self._portions[-1].getRawText(), portion.getRawText()))
             self._portions[-1].appendRawText(portion.getRawText())
         else:
             self._portions.append(portion)
 
     def appendFootnote(self, caption, content):
-        # FIXME convert: this implementation is wiki-specific
+        # TODO convert: this implementation is wiki-specific
         # To make it format agnostic, one solution would be to create subclass for footnote portions:
         #   1. char properties and raw text are taken from caption
         #   2. content is completely converted to text and assigned in BaseConverter (as is now already)
@@ -72,11 +76,43 @@ class Paragraph:
             print("NOT IMPLEMENTED: can't handle footnote at the start of paragraph")
             return
 
-        self._portions[-1].appendRawText(content)
+        if len(content) >= 2:
+            content = content[:-2]  # remove the last paragraph separator: '\n\n'
+
+        self._portions[-1].appendRawText('<ref>{}</ref>'.format(content))
 
     def getPortions(self):
         return self._portions
 
-    def __str__(self) -> str:
-        return self.__class__.__name__ + "({})".format([str(p) for p in self._portions])
+    def getStyleName(self):
+        return self._namedStyle
+
+    def isListItem(self):
+        return self._uno.ListId != ''
+
+    def getListLevel(self):
+        # In ideal world `getListLevel` and `isNumberedList` methods should be removed from this class and defined in
+        # separate class like WikiListItemParagraphDecorator, which inherits from this one.
+        # But since I hasn't learned yet how to init base sub-object (which holds `_paragraphUNO` etc), I think that
+        # would be an overkill for these 2 one-liners.
+        #
+        # Maybe something like
+        #   from copy import copy
+        #   ...
+        #       self = copy(arg)
+
+        return self._uno.NumberingLevel + 1
+
+    def isNumberedList(self):
+        # TODO convert. ListLabelString is empty for unordered list items and contains strings like "1.",  "I.", "(a)"
+        #      for numbered lists. Most likely, code below is not going to work in case of numbered list with custom
+        #      icons instead of text labels. But this should be OK in most cases.
+        #
+        #      I hadn't found out what proper solution should be, check with MRI extension contents of
+        #      Paragraph::NumberingStyleName and Document::getStyleFamilies() and then getByName("NumberingStyles")
+        #      or something like that
+
+        return len(self._uno.ListLabelString) > 0
+
+
 

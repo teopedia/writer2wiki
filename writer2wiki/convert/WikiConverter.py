@@ -15,79 +15,45 @@ class WikiConverter(BaseConverter):
 
     def __init__(self, context):
         super(WikiConverter, self).__init__(context)
-        self._paragraphs = []  # type: List[WikiParagraphDecorator]
 
     @classmethod
-    def makeParagraphDecorator(cls, paragraphUNO, userStylesMap):
-        """
-        :param paragraphUNO:
-        :param userStylesMap:
-        :return WikiParagraphDecorator:
-        """
-        return WikiParagraphDecorator(paragraphUNO, userStylesMap)
+    def makeParagraphDecorator(cls):
+        return WikiParagraphDecorator()
 
     @classmethod
     def getFileExtension(cls):
         return '.wiki.txt'
 
-    @classmethod
-    def replaceNonBreakingChars(cls, text):
-        """
-        Replace non-breaking space and dash with html entities for better readability of wiki-pages sources and safe
-        copy-pasting to editors without proper Unicode support
-
-        :param str text:
-        :return: modified text
-        """
-
-        # full list of non-breaking (glue) chars: http://unicode.org/reports/tr14/#GL
-
-        return text.translate({
-            0x00A0: '&nbsp;',       # non-breaking space
-            0x2011: '&#x2011;',     # non-breaking dash
-            '*'   : '<nowiki>*</nowiki>'  # fixme: doesn't work, see https://webapps.stackexchange.com/q/23463/185067
-        })
-
-    def addParagraph(self, paragraphDecorator):
-        """
-        :param WikiParagraphDecorator paragraphDecorator:
-        :return void:
-        """
-
-        # TODO handle ParagraphAdjust {LEFT, RIGHT, ...}
-        if paragraphDecorator.isEmpty():
-            print('>> skip empty paragraph')
-            return
-
-        self._paragraphs.append(paragraphDecorator)
-
     def getResult(self):
+        # TODO handle ParagraphAdjust {LEFT, RIGHT, ...}
+
         if len(self._paragraphs) == 0:
             return ''
 
+        paraDecorator = self.makeParagraphDecorator()
         result = ''
-        currentStyle = self._paragraphs[0].getStyle()
+        currentStyle = self._paragraphs[0].getStyleName()
         sameStyleBuffer = ''
 
         def flushBuffer():
-            from convert.wiki_util import getStyledContent
+            from writer2wiki.convert.wiki_util import getStyledContent
             nonlocal sameStyleBuffer, result
 
             sameStyleBuffer = sameStyleBuffer[: -2]  # remove last para separator before wrapping in style
             result += getStyledContent(currentStyle, sameStyleBuffer) + '\n\n'
             sameStyleBuffer = ''
 
-        for p in self._paragraphs:
-            if p.getStyle() != currentStyle:
+        for para in self._paragraphs:
+            if para.getStyleName() != currentStyle:
                 flushBuffer()
-                currentStyle = p.getStyle()
+                currentStyle = para.getStyleName()
 
-            if p.isListItem():
+            if para.isListItem():
                 sameStyleBuffer = sameStyleBuffer[:-1]  # remove 1 line feed
-                listChar = '#' if p.isNumberedList() else '*'
-                sameStyleBuffer += listChar * p.getListLevel() + ' '
+                listChar = '#' if para.isNumberedList() else '*'
+                sameStyleBuffer += listChar * para.getListLevel() + ' '
 
-            sameStyleBuffer += p.getContent() + '\n\n'
+            sameStyleBuffer += paraDecorator.getDecorated(para) + '\n\n'
 
         flushBuffer()  # the last style in text will not be flushed inside loop
 

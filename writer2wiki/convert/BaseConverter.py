@@ -4,12 +4,14 @@
 #           http://www.boost.org/LICENSE_1_0.txt)
 
 
-import uno
+from typing import List
 from abc import ABCMeta, abstractmethod
 
-from convert.Paragraph import Paragraph
-from convert.TextPortion import TextPortion
-from convert.WikiParagraphDecorator import WikiParagraphDecorator
+import uno
+
+from writer2wiki.convert.Paragraph import Paragraph
+from writer2wiki.convert.TextPortion import TextPortion
+from writer2wiki.convert.WikiParagraphDecorator import WikiParagraphDecorator
 from writer2wiki.OfficeUi import OfficeUi
 from writer2wiki.w2w_office.lo_enums import TextPortionType
 from writer2wiki.w2w_office.service import Service
@@ -22,30 +24,14 @@ class BaseConverter(metaclass=ABCMeta):
 
     @classmethod
     @abstractmethod
-    def makeParagraphDecorator(cls, paragraphUNO, userStylesMap) -> WikiParagraphDecorator: pass
+    def makeParagraphDecorator(cls) -> WikiParagraphDecorator: pass
 
     @classmethod
     @abstractmethod
     def getFileExtension(cls) -> str: pass
 
-    @classmethod
     @abstractmethod
-    def replaceNonBreakingChars(cls, text: str) -> str:
-        """
-        Replace non-breaking space and dash with html entities for better readability of wiki-pages sources and safe
-        copy-pasting to editors without proper Unicode support
-        """
-
-        # full list of non-breaking (glue) chars: http://unicode.org/reports/tr14/#GL
-        pass
-
-    @abstractmethod
-    def addParagraph(self, paragraphDecorator: WikiParagraphDecorator) -> None:
-        pass
-
-    @abstractmethod
-    def getResult(self) -> str:
-        pass
+    def getResult(self) -> str: pass
 
     def __init__(self, context):
         desktop = Service.create(Service.DESKTOP, context)
@@ -54,6 +40,14 @@ class BaseConverter(metaclass=ABCMeta):
         self._document = desktop.getCurrentComponent()
         self._ui = OfficeUi(context)
         self._hasFootnotes = False
+        self._paragraphs = []  # type: List[Paragraph]
+
+    def addParagraph(self, p: Paragraph) -> None:
+        if p.isEmpty():
+            print('>> skip empty paragraph')
+            return
+
+        self._paragraphs.append(p)
 
     def checkCanConvert(self) -> bool:
         if not Service.objectSupports(self._document, Service.TEXT_DOCUMENT):
@@ -105,8 +99,8 @@ class BaseConverter(metaclass=ABCMeta):
                 print('skip text table')
                 continue
 
-            paragraphDecorator = self.makeParagraphDecorator(paragraphUno, userStylesMapper)
-            portionsList = Paragraph(paragraphUno, userStylesMapper)
+            paragraphDecorator = self.makeParagraphDecorator()
+            paragraph = Paragraph(paragraphUno, userStylesMapper)
             supportedProperties = paragraphDecorator.makeTextPortionDecorator().getSupportedUnoProperties()
 
             for portionUno in iterUnoCollection(paragraphUno):
@@ -119,23 +113,21 @@ class BaseConverter(metaclass=ABCMeta):
                                           supportedProperties
                                           )
                     if not portion.isEmpty():
-                        paragraphDecorator.addPortion(portion)
-                        # portionsList.appendPortion(portion)
+                        paragraph.appendPortion(portion)
 
                 elif portionType == TextPortionType.FOOTNOTE:
                     # TODO convert: recognize endnotes - it has same portion type
                     self._hasFootnotes = True
                     caption = portionUno.getString()
 
-                    # FIXME design: we don't need `context` here, this means the method should be in separate class -
-                    #               XTextObjectConverter or something like that
+                    # TODO design: we don't need `context` here, this means the method should be in separate class -
+                    #              XTextObjectConverter or something like that
                     footConverter = self.__class__(self._context)
                     footConverter._convertXTextObject(portionUno.Footnote, userStylesMapper)
-                    paragraphDecorator.addFootnote(caption, footConverter.getResult())
-                    # portionsList.appendFootnote(caption, footConverter.getResult())
+                    paragraph.appendFootnote(caption, footConverter.getResult())
 
                 else:
                     print('skip portion with not supported type: ' + portionType)
                     continue
 
-            self.addParagraph(paragraphDecorator)
+            self.addParagraph(paragraph)
