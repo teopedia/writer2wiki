@@ -66,9 +66,9 @@ class TextPortion:
 
             return stylePropValue == portionPropValue
 
-        # FIXME: 'Default Style' has localized name for every locale. Docs [1] say only DisplayName should be
-        #        localized at that's true for all built-in styles (e.g. headings) except default one.
-        #        Probably a bug.
+        # FIXME: 'Default Style' has only localized name for every locale. Docs [1] say only DisplayName should be
+        #        localized and that's true for all built-in styles (e.g. headings) except default one.
+        #        Probably a bug. For now we will check localized names for Russian and English locales.
         #        [1] https://api.libreoffice.org/docs/idl/ref/servicecom_1_1sun_1_1star_1_1style_1_1CharacterStyle.html
         inDefaultStyle = propertyIsInStyle('CharacterStyles', 'Базовый') \
                       or propertyIsInStyle('CharacterStyles', 'Default Style')
