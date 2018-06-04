@@ -51,22 +51,27 @@ class TextPortion:
                 # print('style `{:<18}` is not set'.format(styleFamilyName))
                 return False
 
-            portionPropValue = getattr(portionUno, unoPropName)
-
             familyStyles = styleFamilies.getByName(styleFamilyName)
+
+            if not familyStyles.hasByName(styleName):
+                print("ERR. Style family '{}' has no style '{}'".format(styleFamilyName, styleName))
+                return False
+
             style = familyStyles.getByName(styleName)
             stylePropValue = getattr(style, unoPropName)
+            portionPropValue = getattr(portionUno, unoPropName)
 
             # print('style `{:<18}`, prop {:<14} | portionVal: {}, styleVal: {} | equals: {}'.
             #       format(styleName, unoPropName, portionPropValue, stylePropValue, stylePropValue==portionPropValue))
 
             return stylePropValue == portionPropValue
 
-        # FIXME merge: check if 'Default Style' has same name in Russian locale (should be 'Standard' ?)
-        #              (built-in styles have 1 internal universal name and localized names, not sure
-        #               in which properties stored what)
-        # inDefaultStyle = propertyIsInStyle('CharacterStyles', 'Default Style')
-        inDefaultStyle = propertyIsInStyle('CharacterStyles', 'Базовый')
+        # FIXME: 'Default Style' has localized name for every locale. Docs [1] say only DisplayName should be
+        #        localized at that's true for all built-in styles (e.g. headings) except default one.
+        #        Probably a bug.
+        #        [1] https://api.libreoffice.org/docs/idl/ref/servicecom_1_1sun_1_1star_1_1style_1_1CharacterStyle.html
+        inDefaultStyle = propertyIsInStyle('CharacterStyles', 'Базовый') \
+                      or propertyIsInStyle('CharacterStyles', 'Default Style')
         inPortionStyle = propertyIsInStyle('CharacterStyles', portionUno.CharStyleName)
         inParaStyle    = propertyIsInStyle('ParagraphStyles', portionUno.ParaStyleName)
 
