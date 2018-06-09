@@ -58,22 +58,33 @@ class TextPortion:
                 return False
 
             style = familyStyles.getByName(styleName)
-            stylePropValue = getattr(style, unoPropName)
-            portionPropValue = getattr(portionUno, unoPropName)
+            # stylePropValue = getattr(style, unoPropName)
+            stylePropValue = style.getPropertyValue(unoPropName)
+            # portionPropValue = getattr(portionUno, unoPropName)
+            portionPropValue = portionUno.getPropertyValue(unoPropName)
 
             # print('style `{:<18}`, prop {:<14} | portionVal: {}, styleVal: {} | equals: {}'.
             #       format(styleName, unoPropName, portionPropValue, stylePropValue, stylePropValue==portionPropValue))
 
             return stylePropValue == portionPropValue
 
-        # FIXME: 'Default Style' has only localized name for every locale. Docs [1] say only DisplayName should be
-        #        localized and that's true for all built-in styles (e.g. headings) except default one.
-        #        Probably a bug. For now we will check localized names for Russian and English locales.
-        #        [1] https://api.libreoffice.org/docs/idl/ref/servicecom_1_1sun_1_1star_1_1style_1_1CharacterStyle.html
-        inDefaultStyle = propertyIsInStyle('CharacterStyles', 'Базовый') \
-                      or propertyIsInStyle('CharacterStyles', 'Default Style')
+        # It would be nice to handle 'Default Style' uniformly with portion and paragraph styles,
+        # but I've failed to figure out how to get its' XStyle object in locale-agnostic way.
+        #
+        # Name (string) 'Default Style' is localized string - e.g. in Russian locale it's 'Базовый'.
+        # Docs [1] say XStyle object has localized name in `DisplayName` field and locale-agnostic
+        # name in `Name` field. If that was true, we could iterate all styles in CharacterStyles
+        # family and find default one upon script startup. However, default style has localized
+        # string in both these fields (at least when we iterate family). Probably a bug in Office.
+        #
+        # [1] https://api.libreoffice.org/docs/idl/ref/servicecom_1_1sun_1_1star_1_1style_1_1CharacterStyle.html
+
+        inDefaultStyle = portionUno.getPropertyDefault(unoPropName) == portionUno.getPropertyValue(unoPropName)
         inPortionStyle = propertyIsInStyle('CharacterStyles', portionUno.CharStyleName)
         inParaStyle    = propertyIsInStyle('ParagraphStyles', portionUno.ParaStyleName)
+
+        # print("'{:<5}' prop: {:<18}, def: {:<1}, port: {:<1}, para: {:<1}"
+        #       .format(portionUno.getString(), unoPropName, inDefaultStyle, inPortionStyle, inParaStyle))
 
         if not inDefaultStyle and inPortionStyle:
             return True
