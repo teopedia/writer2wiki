@@ -7,7 +7,7 @@
 # TODO add localization
 from pathlib import Path
 
-from writer2wiki.convert.UserStylesMapper import UserStylesMapper
+from writer2wiki.convert.ConversionSettings import ConversionSettings
 
 
 def noWriterDocumentOpened():
@@ -16,65 +16,58 @@ def noWriterDocumentOpened():
 def docHasNoFile():
     return 'Save you document - converted file will be saved to the same folder'
 
-def _missingStylesDescription(userStylesMapper):
+def _missingStylesDescription(conversionSettings: ConversionSettings):
     """
     Get string with text description of missing styles for UI dialog
-
-    :param UserStylesMapper userStylesMapper:
-    :return:
     """
     result = ''
     printedNamesCount = 2
-    mostCommon = userStylesMapper.mostCommonMissingStyles(printedNamesCount)
+    mostCommon = conversionSettings.mostCommonMissingStyles(printedNamesCount)
 
     # TODO PY: replace with `join()`
     for name, count in mostCommon:
         result += "'{}', ".format(name)
     result = result[:-2]  # remove last ', '
 
-    moreElementsCount = len(userStylesMapper.getMissingStyles()) - printedNamesCount
+    moreElementsCount = len(conversionSettings.getMissingStyles()) - printedNamesCount
     if moreElementsCount > 0:
         result += ' and {} more styles'.format(moreElementsCount)
 
     return result
 
-def conversionDoneAndTargetFileDoesNotExist(convertedFilename, mapper):
-    """
-    :param str|Path convertedFilename:
-    :param UserStylesMapper mapper:
-    :return:
-    """
-
+def conversionDoneAndTargetFileDoesNotExist(convertedFilename: Path,
+                                            conversionSettings: ConversionSettings):
     msg = 'Saved converted file to {}'.format(convertedFilename)
 
-    if not mapper.hasMissingStyles():
+    if not conversionSettings.hasMissingStyles():
         return msg
 
     msg += '.\n\n'
-    stylesDesc = _missingStylesDescription(mapper)
-    if mapper.mapFileExisted():
-        msg += 'Some user styles ({}) not found in style-map file, {}. We will map them to themselfs and append '\
-               'them at the end of style-map file.' \
-               .format(stylesDesc, mapper.getFilePath())
+    stylesDesc = _missingStylesDescription(conversionSettings)
+    if conversionSettings.settingsFileExisted():
+        msg += 'Some user styles ({}) not found in style-map file, {}. We will map them to themselfs ' \
+               'and append them at the end of style-map file.' \
+               .format(stylesDesc, conversionSettings.getFilePath())
     else:
-        msg += 'Document contains user-defined styles ({}), but no style-map file found (it should be {}), ' \
-               'we will generate it and map all styles to themselfs. ' \
-               .format(stylesDesc, mapper.getFilePath())
+        msg += 'Document contains user-defined styles ({}), but no style-map file found (it should ' \
+               'be {}), we will generate it and map all styles to themselfs. ' \
+               .format(stylesDesc, conversionSettings.getFilePath())
 
-    msg += '\n\nOpen style-map file in any editor to correct mappings (instructions on how to do that are in the ' \
-           'beginning of the file).' \
+    msg += '\n\nOpen style-map file in any editor to correct mappings (instructions on how to do ' \
+           'that are in the beginning of the file).'
 
     return msg
 
-def conversionDoneAndTargetFileExists(targetFile: Path, mapper: UserStylesMapper):
+def conversionDoneAndTargetFileExists(targetFile: Path, mapper: ConversionSettings):
     msg = "Target file '{}' already exists. Overwrite it?".format(targetFile)
 
     # if file exists, assume user is familiar with the extension and knows what style-map file is
     if mapper.hasMissingStyles():
-        msg += '\n\n(added {} to style-map file, {})'.format(_missingStylesDescription(mapper), mapper.getFilePath())
+        msg += '\n\n(added {} to style-map file, {})'.\
+            format(_missingStylesDescription(mapper), mapper.getFilePath())
 
     return msg
 
 def failedToSaveMappingsFile(filePath):
-    return "Can't write styles-mapping file, {}. Check that it's writable (for example, you are not saving it to "\
-           "some system directory).".format(filePath)
+    return "Can't write conversion settings file, {}. Check that it's writable (for example, " \
+           "you are not saving it to some system directory).".format(filePath)

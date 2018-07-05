@@ -7,7 +7,7 @@
 from collections import OrderedDict
 from typing import List
 
-from writer2wiki.convert.UserStylesMapper import UserStylesMapper
+from writer2wiki.convert.ConversionSettings import ConversionSettings
 
 
 class TextPortion:
@@ -17,10 +17,10 @@ class TextPortion:
 
     def __init__(self, portionUno,
                  styleFamilies,
-                 userStylesMapper: UserStylesMapper,
+                 conversionSettings: ConversionSettings,
                  supportedStyles: List[str]):
         self._rawText = portionUno.getString()
-        self._namedStyle = userStylesMapper.getMappedStyle(portionUno.CharStyleName)
+        self._namedStyle = conversionSettings.getMappedStyle(portionUno.CharStyleName)
         self._nonDefaultProperties = OrderedDict()
 
         if portionUno.HyperLinkURL:

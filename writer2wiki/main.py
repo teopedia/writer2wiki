@@ -57,10 +57,10 @@ def fixPythonImportPath():
 
     parentDirAbs = abspath(parentDir)
     if parentDirAbs not in sys.path:
-        log.debug('appending dir: %s' % parentDirAbs)
+        log.debug('appending dir: ' + parentDirAbs)
         sys.path.append(parentDirAbs)
     else:
-        log.debug('NOT appending %s' % parentDirAbs)
+        log.debug('NOT appending ' + parentDirAbs)
 
 
 try:
@@ -83,9 +83,11 @@ def getOfficeAppContext(haveTriedToStartOffice=False):
     # noinspection PyUnresolvedReferences
     from com.sun.star.connection import NoConnectException
 
+    PORT_NUMBER = 2002
     resolver = Service.create(Service.UNO_URL_RESOLVER)
     try:
-        context = resolver.resolve("uno:socket,host=localhost,port=2002;urp;StarOffice.ComponentContext")
+        context = resolver.resolve("uno:socket,host=localhost,port={};urp;StarOffice.ComponentContext".
+                                   format(PORT_NUMBER))
     except NoConnectException:
         if haveTriedToStartOffice:
             # we've already tried to start office, some other problem occurred
@@ -94,8 +96,8 @@ def getOfficeAppContext(haveTriedToStartOffice=False):
         print("It seems no Libre Office instance is running, let's try to start one")
 
         import os
-        portNumber = 2002
-        os.system('soffice --writer --accept="socket,port=%d;urp;StarOffice.ServiceManager"' % portNumber)
+
+        os.system('soffice --writer --accept="socket,port={};urp;StarOffice.ServiceManager"'.format(PORT_NUMBER))
 
         context = getOfficeAppContext(True)
 

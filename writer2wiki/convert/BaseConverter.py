@@ -15,7 +15,7 @@ from writer2wiki.convert.WikiParagraphDecorator import WikiParagraphDecorator
 from writer2wiki.OfficeUi import OfficeUi
 from writer2wiki.w2w_office.lo_enums import TextPortionType
 from writer2wiki.w2w_office.service import Service
-from writer2wiki.convert.UserStylesMapper import UserStylesMapper
+from writer2wiki.convert.ConversionSettings import ConversionSettings
 from writer2wiki.util import *
 from writer2wiki import ui_text
 import writer2wiki.debug_utils as dbg
@@ -63,10 +63,10 @@ class BaseConverter(metaclass=ABCMeta):
 
     def convertCurrentDocument(self):
         docPath = Path(uno.fileUrlToSystemPath(self._document.getLocation()))
-        userStylesMapper = UserStylesMapper(docPath.parent / 'wiki-styles.txt')
+        conversionSettings = ConversionSettings(docPath)
         textModel = self._document.getText()
 
-        self._convertXTextObject(textModel, userStylesMapper)
+        self._convertXTextObject(textModel, conversionSettings)
 
         dbg.printCentered('done')
         print('result:\n', self.getResult())
@@ -75,21 +75,21 @@ class BaseConverter(metaclass=ABCMeta):
         if targetFile.exists():
             from writer2wiki.w2w_office.lo_enums import MbType, MbButtons, MbResult
             answer = self._ui.messageBox(
-                ui_text.conversionDoneAndTargetFileExists(targetFile, userStylesMapper),
+                ui_text.conversionDoneAndTargetFileExists(targetFile, conversionSettings),
                 boxType=MbType.QUERYBOX,
                 buttons=MbButtons.BUTTONS_OK_CANCEL)
             if answer == MbResult.CANCEL:
                 return
         else:
-            self._ui.messageBox(ui_text.conversionDoneAndTargetFileDoesNotExist(targetFile, userStylesMapper))
+            self._ui.messageBox(ui_text.conversionDoneAndTargetFileDoesNotExist(targetFile, conversionSettings))
 
         with openW2wFile(targetFile, 'w') as f:
             f.write(self.getResult())
 
-        if not userStylesMapper.saveStyles():
-            self._ui.messageBox(ui_text.failedToSaveMappingsFile(userStylesMapper.getFilePath()))
+        if not conversionSettings.saveStyles():
+            self._ui.messageBox(ui_text.failedToSaveMappingsFile(conversionSettings.getFilePath()))
 
-    def _convertXTextObject(self, textUno, userStylesMapper):
+    def _convertXTextObject(self, textUno, conversionSettings):
         from writer2wiki.util import iterUnoCollection
 
         for index, paragraphUno in enumerate(iterUnoCollection(textUno)):
@@ -100,7 +100,7 @@ class BaseConverter(metaclass=ABCMeta):
                 continue
 
             paragraphDecorator = self.makeParagraphDecorator()
-            paragraph = Paragraph(paragraphUno, userStylesMapper)
+            paragraph = Paragraph(paragraphUno, conversionSettings)
             supportedProperties = paragraphDecorator.makeTextPortionDecorator().getSupportedUnoProperties()
 
             for portionUno in iterUnoCollection(paragraphUno):
@@ -109,7 +109,7 @@ class BaseConverter(metaclass=ABCMeta):
 
                     portion = TextPortion(portionUno,
                                           self._document.getStyleFamilies(),
-                                          userStylesMapper,
+                                          conversionSettings,
                                           supportedProperties
                                           )
                     if not portion.isEmpty():
@@ -123,7 +123,7 @@ class BaseConverter(metaclass=ABCMeta):
                     # TODO design: we don't need `context` here, this means the method should be in separate class -
                     #              XTextObjectConverter or something like that
                     footConverter = self.__class__(self._context)
-                    footConverter._convertXTextObject(portionUno.Footnote, userStylesMapper)
+                    footConverter._convertXTextObject(portionUno.Footnote, conversionSettings)
                     paragraph.appendFootnote(caption, footConverter.getResult())
 
                 else:

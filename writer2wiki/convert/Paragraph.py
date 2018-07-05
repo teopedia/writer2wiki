@@ -7,7 +7,7 @@
 from typing import List
 
 from writer2wiki.convert.TextPortion import TextPortion
-from writer2wiki.convert.UserStylesMapper import UserStylesMapper
+from writer2wiki.convert.ConversionSettings import ConversionSettings
 
 
 class Paragraph:
@@ -34,9 +34,9 @@ class Paragraph:
     # If that's implemented, we can do merge for named styles directly on Paragraph
     # instead of doing it in ParagraphDecorator (and hence make the merger format-agnostic)
 
-    def __init__(self, paragraphUno, userStylesMapper: UserStylesMapper):
+    def __init__(self, paragraphUno, conversionSettings: ConversionSettings):
         self._uno = paragraphUno
-        self._namedStyle = userStylesMapper.getMappedStyle(paragraphUno.ParaStyleName)
+        self._namedStyle = conversionSettings.getMappedStyle(paragraphUno.ParaStyleName)
         self._portions = []  # type: List[TextPortion]
 
     def __str__(self) -> str:
