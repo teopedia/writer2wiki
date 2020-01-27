@@ -45,7 +45,7 @@ def conversionDoneAndTargetFileDoesNotExist(convertedFilename: Path,
     msg += '.\n\n'
     stylesDesc = _missingStylesDescription(conversionSettings)
     if conversionSettings.settingsFileExisted():
-        msg += 'Some user styles ({}) not found in style-map file, {}. We will map them to themselfs ' \
+        msg += 'Some user styles ({}) not found in style-map file, {}. We will map them to themselves ' \
                'and append them at the end of style-map file.' \
                .format(stylesDesc, conversionSettings.getFilePath())
     else:

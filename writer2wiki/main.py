@@ -162,7 +162,7 @@ g_ImplementationHelper.addImplementation(
 
 # For use from IDE or command line.
 # Use Python interpreter from LibreOffice's distribution.
-# On Windows it's <Program Files>\LibreOffice 5\program\python.exe
+# On Windows it's <Program Files>\LibreOffice\program\python.exe
 if __name__ == '__main__':
     convertToWiki()
 

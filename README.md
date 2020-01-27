@@ -10,8 +10,9 @@ Currently supported styles:
 * sub- and superscript (as in 2 power 10)
 * hyperlinks
 * text color
+* ordered and unordered lists
 
-See `examples/wiki-sample.odt` for an example of what works.
+See `non-oxt-files/examples/wiki-sample.odt` for an example of what works.
 
 ## Using as a LibreOffice macro
 1. open folder *(your office install path)/share/Scripts/python*
@@ -23,14 +24,28 @@ See `examples/wiki-sample.odt` for an example of what works.
 
 
 ## Packaging
-TODO packaging into .oxt
 
+Just compress all folder's content with zip. It **must** be content, not folder itself.
+ 
+I.e. if you create archive in GUI (Explorer on Windows, or Nautilus on Ubuntu), select 
+* `extension-config`
+* `META-INF` 
+* `writer2wiki`
+* `description.xml`
+* `LICENSE.txt`
+
+Then right-click on any of selected files and choose "compress" (or something like that).
+
+The rest of folders and files (.idea, .git, readme) are not necessary for extension to work, but they will do no harm. 
 
 ## Dev tips
 
 ### Getting started
 
 Hello world: [Scripting LibreOffice with Python](https://onesheep.org/scripting-libreoffice-python/)
+
+Install [MRI extension](https://extensions.libreoffice.org/extensions/mri-uno-object-inspection-tool) by Hanya. It's 
+absolutely indispensable tool for navigating and learning document's internal structure.  
 
 Setting up [PyCharm](https://www.jetbrains.com/pycharm/download):
 1. create new project
@@ -39,7 +54,7 @@ Setting up [PyCharm](https://www.jetbrains.com/pycharm/download):
 
 Running from an IDE:
 1. run *main.py* file (`SHIFT` + `F10` with default PyCharm key-mapping) - Office will start if it isn't already
-2. run second time to convert currently open document to wiki
+2. run second time (`SHIFT` + `F10` again) to convert currently open document to wiki
 
 
 ### Contributing
