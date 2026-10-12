@@ -5,14 +5,14 @@
              xmlns:xlink = "http://www.w3.org/1999/xlink">
 
     <identifier value="com.github.teopedia.writer2wiki" />
-    <version value="0.13"/>
+    <version value="0.16"/>
 
     <dependencies>
         <libre:LibreOffice-minimal-version value="5.4" descr:name="LibreOffice 5.4"/>
     </dependencies>
 
     <update-download>
-        <src xlink:href="https://github.com/teopedia/writer2wiki/releases/download/v0.13/writer2wiki.oxt"/>
+        <src xlink:href="https://github.com/teopedia/writer2wiki/releases/download/v0.16/writer2wiki.oxt"/>
     </update-download>
 
 </description>

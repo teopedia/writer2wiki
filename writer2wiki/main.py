@@ -112,7 +112,7 @@ def convertToWiki(appContext=None):
     * from macro
     * from command line / IDE
 
-    (see entry points setup at the end file)
+    (see entry points setup at the end of file)
     """
 
     log.info(' Conversion started '.center(80, '-'))
@@ -161,8 +161,22 @@ g_ImplementationHelper.addImplementation(
 
 
 # For use from IDE or command line.
-# Use Python interpreter from LibreOffice's distribution.
-# On Windows it's <Program Files>\LibreOffice\program\python.exe
+#   1. Use Python interpreter from LibreOffice's distribution.
+#      On Windows it's <Program Files>\LibreOffice\program\python.exe
+#      Beware not to confuse it with Python's implementation folder, like this one:
+#      C:\Program Files\LibreOffice\program\python-core-3.11.13\bin\python.exe
+#                                           ^^^^^^^^^^^^^^^^^^^ - WRONG
+#   2. Start LibreOffice and open document you want to convert
+#   3. Run this script:
+#      3.1. from IDE
+#         * click "Run" on code line below (`if __name__ == '__main__'`)
+#           (button should appear in the left gutter if you've set proper `python.exe` in project's settings)
+#         * after the first run the script will start LibreOffice instance, which it can connect to. (For some reason
+#           the script can't connect to instances you would start yourself via desktop icon or the like)
+#         * open document you want to convert
+#         * click "Run" again, converted document will appear in the same folder as original document
+#      3.2. from command line:
+#           C:\> "C:\Program Files\LibreOffice\program\python.exe" "<path to w2w>\writer2wiki\main.py"
 if __name__ == '__main__':
     convertToWiki()
 

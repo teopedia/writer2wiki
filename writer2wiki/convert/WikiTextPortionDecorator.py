@@ -11,6 +11,9 @@ from writer2wiki.util import *
 
 
 class WikiTextPortionDecorator(BaseTextPortionDecorator):
+    """ IMPLEMENTATION NOTE: all `applyXxx()` methods (e.g. applyCharColor) are dispatched dynamically,
+        see BaseTextPortionDecorator.getDecoratedText().
+    """
 
     def __init__(self):
         super().__init__()
@@ -19,14 +22,14 @@ class WikiTextPortionDecorator(BaseTextPortionDecorator):
     @classmethod
     def getSupportedUnoProperties(cls):
         return [
-            'CharPosture',      # italic
-            'CharWeight',       # bold
-            'CharCaseMap',      # small-caps, capitalize etc
-            'CharColor',        # font color
-            'CharEscapement',   # subscript / superscript
-            'CharStrikeout',
-            'CharUnderline',
-            'CharUnderlineColor'
+            TextPortionPropertyName.POSTURE,
+            TextPortionPropertyName.WEIGHT,
+            TextPortionPropertyName.CASE_MAP,
+            TextPortionPropertyName.COLOR,
+            TextPortionPropertyName.ESCAPEMENT,
+            TextPortionPropertyName.STRIKEOUT,
+            TextPortionPropertyName.UNDERLINE,
+            TextPortionPropertyName.UNDERLINE_COLOR
         ]
 
     @classmethod
@@ -162,7 +165,7 @@ class WikiTextPortionDecorator(BaseTextPortionDecorator):
 
     def applyCharEscapement(self, escapement):
         if escapement == 0:
-            print('BUG: invoked handleCharEscapement with 0 escapement')
+            print('BUG: invoked applyCharEscapement with 0 escapement')
             return
 
         if escapement > 0:
@@ -179,7 +182,7 @@ class WikiTextPortionDecorator(BaseTextPortionDecorator):
         # TODO PY: replace with something like `str.join()`
         for name, value in sorted(self._cssStyles.items()):
             style += name + ':' + value + ';'
-        style = style[:-1]  # remove last semicolon
+        style = style[:-1]  # remove the last semicolon
         self._result = surroundWithTag(self._result, 'span', 'style="%s"' % style)
 
         # workaround for wikitext limitation: <span> tag not rendered inside wiki {{templates}}

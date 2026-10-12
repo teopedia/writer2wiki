@@ -26,6 +26,15 @@ class TextPortionType:
     SOFT_PAGE_BREAK     = 'SoftPageBreak'
     IN_CONTENT_METADATA = 'InContentMetadata'
 
+class TextPortionPropertyName:
+    POSTURE         = 'CharPosture'      # italic
+    WEIGHT          = 'CharWeight'       # bold
+    CASE_MAP        = 'CharCaseMap'      # small-caps, capitalize etc
+    COLOR           = 'CharColor'        # font color
+    ESCAPEMENT      = 'CharEscapement'   # subscript / superscript
+    STRIKEOUT       = 'CharStrikeout'
+    UNDERLINE       = 'CharUnderline'
+    UNDERLINE_COLOR = 'CharUnderlineColor'
 
 # If we will ever come up with automatic generation of Python bindings for LibreOffice, these could be retrieved with
 # `uno.getConstantByName('com.sun.star.awt.FontWeight.BOLD')` etc.

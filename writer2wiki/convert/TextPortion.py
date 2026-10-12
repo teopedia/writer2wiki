@@ -8,6 +8,7 @@ from collections import OrderedDict
 from typing import List
 
 from writer2wiki.convert.ConversionSettings import ConversionSettings
+from writer2wiki.w2w_office.lo_enums import *
 
 
 class TextPortion:
@@ -31,7 +32,12 @@ class TextPortion:
             if propValue is None:
                 print('ERR: portion UNO has no property `{}`'.format(unoPropName))
                 continue
-            if __class__._propertyIsInStyleOrIsDefault(portionUno, unoPropName, styleFamilies):
+            if TextPortion._propertyIsInStyleOrIsDefault(portionUno, unoPropName, styleFamilies):
+                continue
+
+            # TODO. See if it's possible to move this to BaseTextPortionDecorator.getDecoratedText().
+            #       That will require to pass ConvertionSettings, but would be much cleaner to do such thing there.
+            if conversionSettings.ignoreFontColor() and unoPropName == TextPortionPropertyName.COLOR:
                 continue
 
             self._nonDefaultProperties[unoPropName] = propValue
