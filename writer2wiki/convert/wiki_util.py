@@ -1,4 +1,4 @@
-$$$INLINE_STYLE_PLACEHOLDER = '$$$'
+INLINE_STYLE_PLACEHOLDER = '$$$'
 
 def getStyledContent(style: str, content: str) -> str:
     if not style or not content:

@@ -9,7 +9,7 @@ from collections import Counter
 from pathlib import Path
 
 from writer2wiki.util import openW2wFile
-import wiki_util
+import writer2wiki.convert.wiki_util as wiki_util
 
 
 class ConversionSettings:
