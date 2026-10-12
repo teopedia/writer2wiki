@@ -9,10 +9,11 @@ from collections import Counter
 from pathlib import Path
 
 from writer2wiki.util import openW2wFile
+import wiki_util
 
 
 class ConversionSettings:
-    """ Conversion settings, read from file `writer2wiki-folder-settings.txt` in document's folder.
+    """ Conversion settings, they are read from file `writer2wiki-folder-settings.txt` in document's folder.
         If this file doesn't exist and the document contains custom styles, it will be created.
     """
 
@@ -97,7 +98,7 @@ class ConversionSettings:
     # TODO: deprecated, delete
     def _initStyleMapFromFile(self):
         if not self._legacyMapFile.exists():
-            print("style-map file does't exist:", self._legacyMapFile)
+            print("style-map file doesn't exist:", self._legacyMapFile)
             return
 
         with openW2wFile(self._legacyMapFile, 'r') as f:
@@ -159,21 +160,49 @@ class ConversionSettings:
 
             
             #{section_sep}
-            # This section sets mappings of Office user-defined (custom) styles to wiki templates.
-            # 
-            # For example, if Office document contains paragraph with text `Introduction` and style
+            # This section sets mappings of Office user-defined (custom) styles to: 
+            #   * either wiki templates - name of wiki template (possibly including namespace)
+            #   * or inline styles - any combination of characters containing {inline_text_placeholder} (three dollar
+            #                        signs), {inline_text_placeholder} will be replaced by document's text and all 
+            #                        the other characters will be printed verbatim  
+            #
+            # Mapped style example 
+            # ---
+            #
+            # If Office document contains paragraph with text `Introduction` and style
             # `my-title`, and there is following line in this file:
             #     my-title = my-wiki-namespace:big-title
             # 
-            # Converted wiki-text will look like:
+            # Converted wiki-text will be:
             #     {{my-wiki-namespace:big-title|Introduction}}
+            # 
+            # Inline style example
+            # ---
+            # 
+            # If Office document contains paragraph with text `Introduction` and style
+            # `my-title`, and there is following line in this file:
+            #     my-title = __**{inline_text_placeholder}**__ 
+            # 
+            # Converted wiki-text will be:
+            #     __**Introduction**__
+            # 
+            # Note that char sequences before and after {inline_text_placeholder} placeholder don't have to be 
+            # symmetric or related to each other in any way. All of the following inline styles are valid:
+            #    my-title = __**{inline_text_placeholder}
+            #    my-title = abc{inline_text_placeholder}123
+            #    my-title = {inline_text_placeholder}@!LL
+            #
+            # Ignore Office style
+            # ---
             # 
             # To ignore style, leave right-hand side of an assignment blank:
             #      my-ignored-style =
             [{styles}]  
             
             """.format(options=self._KEY_OPTIONS_SECTION, styles=self._KEY_STYLES_SECTION,
-                       opt_ignore_font_color=self._OPTION_IGNORE_FONT_COLOR, section_sep='-' * 79))
+                       opt_ignore_font_color=self._OPTION_IGNORE_FONT_COLOR,
+                       inline_text_placeholder=wiki_util.INLINE_STYLE_PLACEHOLDER,
+                       section_sep='-' * 79))
 
     def saveStyles(self):
 
@@ -197,7 +226,7 @@ class ConversionSettings:
             if self.settingsFileExisted():
                 from datetime import datetime
                 f.write("\n\n# below are styles automatically added by Writer2Wiki from '{}' "
-                        "on {:%Y-%m-%d %H:%M:%S}, change them as you see fit"
+                        "on {:%Y-%m-%d %H:%M:%S}, change them as you see fit\n"
                         .format(self._docPath.name, datetime.today()))
             else:
                 f.write(self._newFileIntroText())
